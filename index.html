@@ -66,7 +66,7 @@
     /* ── Progress bar ─────────────────────────────────────────────── */
     #progressContainer { width: 100%; background: rgba(255,215,0,0.12); border: 1px solid gold;
       height: 12px; border-radius: 8px; margin-top: 8px; cursor: pointer; position: relative;
-      overflow: hidden; /* clamps thumb at 0% and 100% so it never escapes the bar */
+      overflow: hidden;
       touch-action: none; }
     #progress { height: 100%; width: 0%; background: gold; border-radius: 8px; pointer-events: none; }
     #progressThumb { position: absolute; left: 0; top: 50%; transform: translate(-50%, -50%);
@@ -85,9 +85,10 @@
     @keyframes alarm-flash { 0%{background-color:black;}50%{background-color:#660000;}100%{background-color:black;} }
     @keyframes alarm-pulse { 0%{border-color:red;}50%{border-color:yellow;}100%{border-color:red;} }
 
-    /* ── Video container ──────────────────────────────────────────── */
-    #videoContainer { display: none; margin-top: 10px; border: 2px solid gold; border-radius: 8px; overflow: hidden; max-width: 100%; }
-    #videoPlayer { width: 100%; display: block; max-height: 50vw; object-fit: contain; background: #000; }
+    /* ── Video container — FIX: constrained to 320px like old player ── */
+    #videoContainer { display: none; margin-top: 10px; border: 2px solid gold; border-radius: 8px;
+      overflow: hidden; max-width: 320px; }
+    #videoPlayer { width: 100%; display: block; }
     #pipBtn { margin-top: 8px; }
 
     /* ── Range inputs ─────────────────────────────────────────────── */
@@ -168,16 +169,13 @@
       .slider-row input[type="range"] { min-width: 60px; }
       #subfoldersPanel { padding: 12px; }
       .folder-tree { font-size: 11px; padding: 10px 12px; }
-      #videoPlayer { max-height: 55vw; }
+      /* FIX: removed oversized max-height from video on mobile — 320px container constrains it naturally */
+      #videoContainer { max-width: 100%; }
     }
 
-    /* ═══ SAFARI / iOS specific ═══════════════════════════════════════
-       Safari on iOS clips fixed elements inside transformed parents,
-       and has issues with 100vh. These rules patch the most common problems. */
+    /* ═══ SAFARI / iOS specific ══════════════════════════════════════ */
     @supports (-webkit-touch-callout: none) {
-      /* iOS safe-area padding so content doesn't hide behind notch/home bar */
       body { padding-bottom: env(safe-area-inset-bottom, 16px); }
-      /* Safari doesn't always fire canplaythrough — handled in JS with canplay fallback */
     }
   </style>
 </head>
@@ -207,7 +205,6 @@
     <button id="bestTracksBtn"  class="toggle-btn">Best Tracks</button>
     <button id="goodTracksBtn"  class="toggle-btn">Good Tracks</button>
   </div>
-
 
   <div id="progressContainer" title="Click or drag to seek"><div id="progress"></div><div id="progressThumb"></div></div>
   <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
@@ -241,7 +238,6 @@
 
   <div class="alarm"><h3>Alarm Settings</h3><div id="alarms"></div><button id="addAlarmBtn">Add Alarm</button></div>
 
-  <!-- Subfolder structure diagram — shown when Subfolders toggle is active -->
   <div id="subfoldersPanel">
     <h4>📁 Folder Structure Reference</h4>
     <p>Arrange your files in this exact layout to unlock the <strong>Best Tracks</strong> and <strong>Good Tracks</strong> filter buttons. The folder names must match — special characters like <code style="color:gold;">@</code> and <code style="color:gold;">&amp;</code> are handled automatically.</p>
@@ -258,6 +254,7 @@
       ⚠️ Drag-and-drop folder upload requires a Chromium-based browser (Chrome, Edge). Safari on iOS supports adding individual files only — subfolder detection will not work on iOS.
     </p>
   </div>
+
   <audio id="audioPlayer" controls style="display:none;" crossorigin="anonymous"></audio>
   <audio id="alarmSound" preload="auto" style="display:none;"></audio>
 
@@ -308,7 +305,6 @@
     /* ── Safari / iOS detection ───────────────────────────────────── */
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    // On iOS, webkitdirectory is unsupported — show the individual-file picker instead
     if (isIOS) {
       const folderLabel = document.querySelector('label[for="fileInput"]');
       if (folderLabel) folderLabel.style.display='none';
@@ -321,7 +317,7 @@
     let alarmSettings = [], alarmTimeout = null;
     let isRandomPauseEnabled = false, isAutoPipEnabled = false;
     let isLoopEnabled = false, isVisualizerEnabled = false;
-    let filterMode = 'all';            // 'all' | 'best' | 'good'
+    let filterMode = 'all';
     let currentRandomPause = null, randomPauseTimer = null;
     let isAlarmActive = false, savedPlaybackState = null, lastAlarmTime = null;
     let urlCache = {}, playbackRetryCount = 0, isVideoHidden = false;
@@ -393,14 +389,16 @@
       if (savedPlaybackState&&savedPlaybackState.wasPlaying) {
         try {
           const elem = savedPlaybackState.isVideo?video:audio;
-          // Prefer a fresh URL from the file reference; fall back to stored URL
-          const resumeUrl = savedPlaybackState.trackFile
-            ? (urlCache[savedPlaybackState.trackFile.name] || (urlCache[savedPlaybackState.trackFile.name]=URL.createObjectURL(savedPlaybackState.trackFile)))
+          // FIX: prefer fresh URL from the original File reference so resume
+          // still works even if the old objectURL was revoked during shuffle.
+          const savedFile = savedPlaybackState.trackFile;
+          const resumeUrl = savedFile
+            ? (urlCache[savedFile.name] || (urlCache[savedFile.name]=URL.createObjectURL(savedFile)))
             : savedPlaybackState.trackUrl;
           elem.src=resumeUrl; elem.currentTime=savedPlaybackState.position;
           videoContainer.style.display=savedPlaybackState.isVideo?'block':'none';
           currentMediaElement=elem; currentTrack={name:savedPlaybackState.trackName};
-          isPaused=true; // show Play while it loads
+          isPaused=true;
           updatePlayPauseButton();
           setTimeout(()=>{
             elem.play().then(()=>{
@@ -439,20 +437,14 @@
     }
 
     /* ── Folder detection ─────────────────────────────────────────── */
-    // Normalise path: lowercase, strip spaces, replace @ with 'a', strip & and digits
     function detectFolder(file) {
       const rp = (file.webkitRelativePath||'').toLowerCase()
-        .replace(/\s+/g,'')     // remove spaces
-        .replace(/@/g,'a')      // @ → a  (Music@mp3z → musicamp3z)
-        .replace(/&/g,'and');   // & → and
-      // "The Best of The Best Mp3z" subfolder
+        .replace(/\s+/g,'')
+        .replace(/@/g,'a')
+        .replace(/&/g,'and');
       if (rp.includes('thebestofthebest') || rp.includes('bestofthebest')) return 'best';
-      // "MusicAmp3z" / "Music@mp3z" subfolder — must be a proper subfolder,
-      // NOT the root folder (which contains both). We detect it by checking
-      // that the path has at least 2 segments, meaning the file is INSIDE a subfolder.
       const parts = (file.webkitRelativePath||'').split('/');
       if (parts.length >= 3) {
-        // parts[1] is the immediate parent folder of the file
         const parent = parts[parts.length - 2].toLowerCase().replace(/\s+/g,'').replace(/@/g,'a').replace(/&/g,'and');
         if (parent.includes('musicamp3z') || parent.includes('musicamp3')) return 'good';
       }
@@ -464,16 +456,12 @@
       if (filterMode==='all') return true;
       return file._folder === filterMode;
     }
-
-    // First playlist index matching the current filter (top of list)
     function findFirstFilteredIndex() {
       for (let i=0; i<playlist.length; i++) {
         if (trackMatchesFilter(playlist[i])) return i;
       }
       return -1;
     }
-
-    // Next index (wrapping) matching filter, starting AFTER afterIndex
     function findNextFilteredIndex(afterIndex) {
       if (!playlist.length) return -1;
       for (let i=1; i<=playlist.length; i++) {
@@ -486,8 +474,6 @@
     /* ── Playlist display ─────────────────────────────────────────── */
     async function updatePlaylistDisplay() {
       playlistDiv.innerHTML='';
-
-      // Compat hint — shown until first upload, lives at top of playlist area
       if(playlist.length===0){
         const hint=document.createElement('div');
         hint.id='compatHint';
@@ -495,34 +481,26 @@
         playlistDiv.appendChild(hint);
         return;
       }
-
       for (let index=0; index<playlist.length; index++) {
         const file = playlist[index];
         if (!file.metadata) file.metadata = await loadMetadata(file);
-
         const trackItem = document.createElement('div');
         trackItem.className='track-item'; trackItem.draggable=true; trackItem.dataset.index=index;
         if (currentTrack&&currentTrack.name===file.name) trackItem.classList.add('playing');
         if (!trackMatchesFilter(file)) trackItem.classList.add('filtered-out');
-
         const left=document.createElement('div');
         left.style.cssText='display:flex;gap:10px;align-items:center;flex:1;';
-
         const dh=document.createElement('span'); dh.className='drag-handle'; dh.textContent='☰';
         left.appendChild(dh);
-
         const ti=document.createElement('div'); ti.className='track-info';
         const ns=document.createElement('div'); ns.className='track-name';
-        // Only show a badge when the matching filter is active
         let badge='';
         if (filterMode==='best' && file._folder==='best') badge='<span class="folder-badge best">BEST</span>';
         else if (filterMode==='good' && file._folder==='good') badge='<span class="folder-badge good">GOOD</span>';
         ns.innerHTML=file.name+badge; ti.appendChild(ns);
-
         const ms=document.createElement('div'); ms.className='track-meta';
         ms.textContent=`${file.metadata.artist} • ${file.metadata.duration}`; ti.appendChild(ms);
         left.appendChild(ti);
-
         const removeBtn=document.createElement('button'); removeBtn.textContent='Remove'; removeBtn.className='remove-btn';
         removeBtn.onclick=(e)=>{
           e.stopPropagation();
@@ -531,7 +509,6 @@
           if (currentTrackIndex>=index&&currentTrackIndex>0) currentTrackIndex--;
           updatePlaylistDisplay();
         };
-
         trackItem.addEventListener('click',(e)=>{if(e.target.closest('.remove-btn'))return;playSpecificTrack(index);});
         trackItem.addEventListener('dragstart',(e)=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',index);trackItem.classList.add('dragging');});
         trackItem.addEventListener('dragend',()=>trackItem.classList.remove('dragging'));
@@ -541,21 +518,20 @@
           const from=parseInt(e.dataTransfer.getData('text/plain')),to=parseInt(trackItem.dataset.index);
           if(from!==to){const item=playlist.splice(from,1)[0];playlist.splice(to,0,item);if(currentTrack)currentTrackIndex=playlist.findIndex(f=>f.name===currentTrack.name);updatePlaylistDisplay();}
         });
-
         trackItem.appendChild(left); trackItem.appendChild(removeBtn);
         playlistDiv.appendChild(trackItem);
       }
     }
 
-    /* ── Shuffle (internal, no flash) ────────────────────────────── */
+    /* ── Shuffle (internal) ───────────────────────────────────────── */
     function shuffleArray() {
-      // Revoke cached URLs but SKIP the currently-playing track so it keeps playing
+      // FIX: preserve the currently-playing track's cached URL so it doesn't
+      // get revoked mid-playback when auto-shuffling after file load.
       const currentName = currentTrack ? currentTrack.name : null;
       for (let k in urlCache) {
         if (k !== currentName) { try{URL.revokeObjectURL(urlCache[k]);}catch(e){} delete urlCache[k]; }
       }
       for (let i=playlist.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[playlist[i],playlist[j]]=[playlist[j],playlist[i]];}
-      // Keep currentTrackIndex pointing at the same file after shuffle
       if (currentTrack) currentTrackIndex = playlist.findIndex(f=>f.name===currentTrack.name);
       else currentTrackIndex=0;
     }
@@ -579,7 +555,7 @@
       }
     }
 
-    /* ── File input: add + AUTO-SHUFFLE ──────────────────────────── */
+    /* ── File input handler ───────────────────────────────────────── */
     async function handleFileInputChange(input) {
       Array.from(input.files||[]).forEach(addFileToPlaylist);
       shuffleArray();
@@ -590,23 +566,17 @@
     fileInputSafari.addEventListener('change', ()=>handleFileInputChange(fileInputSafari));
 
     /* ── Stop all media ───────────────────────────────────────────── */
-    let stopGeneration = 0; // incremented each call; setTimeout checks it before restoring handlers
+    // FIX: removed the onended nullify/restore pattern which could leave
+    // handlers permanently unset if stopAllMedia was called in rapid succession.
+    // Instead we clear src/pause immediately — the ended event cannot fire
+    // on an element with no src, so there is no double-trigger risk.
     function stopAllMedia(){
-      const gen = ++stopGeneration;
-      audio.onended=null; video.onended=null;
-      audio.oncanplaythrough=null; audio.oncanplay=null;
-      video.oncanplaythrough=null; video.oncanplay=null;
       audio.pause(); video.pause();
       audio.src=''; video.src='';
       audio.load(); video.load();
-      setTimeout(()=>{
-        if(gen===stopGeneration){ // only restore if no newer stop has happened
-          audio.onended=onAudioEnded; video.onended=onVideoEnded;
-        }
-      },0);
     }
 
-    /* ── Play specific (filter does NOT block manual clicks) ─────── */
+    /* ── Play specific track ──────────────────────────────────────── */
     function playSpecificTrack(index) {
       if(isAlarmActive) return; if(index<0||index>=playlist.length) return;
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
@@ -622,9 +592,8 @@
         nowPlaying.textContent='Loading: '+file.name;
         elem.loop=isLoopEnabled;
         elem.src=url; elem.load();
-
-        // Safari sometimes skips canplaythrough and only fires canplay.
-        // We use a flag so whichever fires first wins and the other is ignored.
+        // FIX: use readyFired flag so only the first of canplaythrough/canplay wins,
+        // preventing double-play attempts on Safari which fires both events.
         let readyFired=false;
         function onReady(){
           if(readyFired) return; readyFired=true;
@@ -641,7 +610,7 @@
           }).catch(err=>{console.error("Error playing:",err);nowPlaying.textContent="Error: "+file.name; updatePlayPauseButton();});
         }
         elem.oncanplaythrough=onReady;
-        elem.oncanplay=onReady; // Safari fallback
+        elem.oncanplay=onReady;
       } catch(e){console.error("Error preparing:",e);nowPlaying.textContent="Error preparing track";}
     }
 
@@ -682,7 +651,6 @@
     }
     function seekToEvent(e){
       const elem=currentMediaElement||audio; const rect=progressContainer.getBoundingClientRect();
-      // clientX is 0 for touch events, so check touches explicitly first
       let clientX;
       if(e.touches && e.touches.length>0) clientX=e.touches[0].clientX;
       else if(e.changedTouches && e.changedTouches.length>0) clientX=e.changedTouches[0].clientX;
@@ -702,9 +670,6 @@
     function updatePlayPauseButton(){
       if(isAlarmActive){playPauseBtn.textContent='Alarm Active';playPauseBtn.disabled=true;return;}
       if(currentRandomPause){playPauseBtn.textContent='Skip Pause';playPauseBtn.disabled=false;return;}
-      const elem=currentMediaElement||audio;
-      // Use isPaused flag + currentTrack presence — more reliable than elem.paused
-      // which can be true briefly right after calling play() before it resolves
       playPauseBtn.textContent=(isPaused||!currentTrack)?'Play':'Pause';
       playPauseBtn.disabled=false;
     }
@@ -800,7 +765,6 @@
     function playAlarm(){
       if(isAlarmActive) return; isAlarmActive=true;
       const elem=currentMediaElement||audio;
-      // Store the actual file reference (not just the URL) so resume works even if URL was revoked
       const savedFile = currentTrack ? playlist.find(f=>f.name===currentTrack.name) : null;
       savedPlaybackState=currentTrack&&!isPaused
         ?{wasPlaying:true,position:elem.currentTime,trackName:nowPlaying.textContent,
@@ -855,31 +819,23 @@
     }
     window.addEventListener('beforeunload',()=>{for(let k in urlCache){try{URL.revokeObjectURL(urlCache[k]);}catch(e){}}});
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ LOOP
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Loop ─────────────────────────────────────────────────────── */
     loopBtn.addEventListener('click',()=>{
       isLoopEnabled=!isLoopEnabled; audio.loop=isLoopEnabled; video.loop=isLoopEnabled;
       loopBtn.classList.toggle('active',isLoopEnabled);
     });
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ AUTO PIP
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Auto PIP ─────────────────────────────────────────────────── */
     autoPipBtn.onclick=()=>{isAutoPipEnabled=!isAutoPipEnabled;autoPipBtn.classList.toggle('active',isAutoPipEnabled);};
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ VISUALIZER TOGGLE  (hidden by default)
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Visualizer toggle ────────────────────────────────────────── */
     visualizerBtn.addEventListener('click',()=>{
       isVisualizerEnabled=!isVisualizerEnabled;
       vizWrapper.style.display=isVisualizerEnabled?'block':'none';
       visualizerBtn.classList.toggle('active',isVisualizerEnabled);
     });
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ SUBFOLDERS TOGGLE  — shows / hides the folder diagram
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Subfolders toggle ────────────────────────────────────────── */
     subfoldersBtn.addEventListener('click',()=>{
       const on = subfoldersPanel.style.display!=='block';
       subfoldersPanel.style.display = on ? 'block' : 'none';
@@ -887,15 +843,12 @@
       if(on) subfoldersPanel.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ FILTER BUTTONS  — Best Tracks / Good Tracks
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Filter buttons ───────────────────────────────────────────── */
     function setFilter(mode){
-      filterMode = (filterMode===mode) ? 'all' : mode;   // toggle off if same
+      filterMode = (filterMode===mode) ? 'all' : mode;
       bestTracksBtn.classList.toggle('active', filterMode==='best');
       goodTracksBtn.classList.toggle('active', filterMode==='good');
       updatePlaylistDisplay();
-      // Immediately jump to the first track that matches the new filter
       if (filterMode !== 'all') {
         const firstIdx = findFirstFilteredIndex();
         if (firstIdx !== -1) playSpecificTrack(firstIdx);
@@ -904,10 +857,7 @@
     bestTracksBtn.addEventListener('click',()=>setFilter('best'));
     goodTracksBtn.addEventListener('click',()=>setFilter('good'));
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ WEB AUDIO GRAPH  (Visualizer + EQ)
-    ════════════════════════════════════════════════════════════════ */
-    // Safari / iOS requires AudioContext resume on a direct user gesture
+    /* ── Web Audio graph (Visualizer + EQ) ───────────────────────── */
     function resumeAudioCtx(){ if(audioContext.state==='suspended') audioContext.resume().catch(()=>{}); }
     document.addEventListener('click', resumeAudioCtx);
     document.addEventListener('touchstart', resumeAudioCtx, {passive:true});
@@ -925,9 +875,7 @@
     audio.addEventListener('play',()=>connectToGraph(audio));
     video.addEventListener('play',()=>connectToGraph(video));
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ VISUALIZER CANVAS
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Visualizer canvas ────────────────────────────────────────── */
     const vizCanvas=document.getElementById('visualizerCanvas');
     const vizCtx=vizCanvas.getContext('2d');
     function syncCanvasSize(){const w=vizCanvas.offsetWidth||600,h=vizCanvas.offsetHeight||90;if(vizCanvas.width!==w||vizCanvas.height!==h){vizCanvas.width=w;vizCanvas.height=h;}}
@@ -937,7 +885,7 @@
     const peakDecay=0.015;
     function drawVisualizer(){
       requestAnimationFrame(drawVisualizer);
-      if(!isVisualizerEnabled) return;   // skip draw when panel is hidden
+      if(!isVisualizerEnabled) return;
       syncCanvasSize();
       analyserNode.getByteFrequencyData(freqBins);
       const W=vizCanvas.width,H=vizCanvas.height,count=freqBins.length,bW=W/count;
@@ -955,9 +903,7 @@
     }
     drawVisualizer();
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ FREQUENCY SLIDER  (High-shelf EQ)
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Frequency slider (high-shelf EQ) ────────────────────────── */
     const frequencySlider=document.getElementById('frequencySlider');
     const frequencyDisplay=document.getElementById('frequencyDisplay');
     frequencySlider.addEventListener('input',()=>{
@@ -967,9 +913,7 @@
       else frequencyDisplay.textContent=`Treble +${Math.round(gain)} dB`;
     });
 
-    /* ════════════════════════════════════════════════════════════════
-       ★ PITCH SLIDER
-    ════════════════════════════════════════════════════════════════ */
+    /* ── Pitch slider ─────────────────────────────────────────────── */
     const pitchSlider=document.getElementById('pitchSlider');
     const pitchDisplay=document.getElementById('pitchDisplay');
     pitchSlider.addEventListener('input',()=>{
@@ -979,7 +923,7 @@
     });
 
     /* ── Init ─────────────────────────────────────────────────────── */
-    isPaused = true; // no track loaded yet — button should say Play
+    isPaused = true;
     updatePlaylistDisplay();
     updatePlayPauseButton();
   });
