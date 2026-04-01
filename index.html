@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inflated Media Player Pro</title>
   <style>
-    /* ── Base ─────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
     html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
     body { background-color: black; color: gold; font-family: sans-serif;
            margin: 20px; position: relative; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
     h1 { color: gold; }
-
-    /* ── Buttons ──────────────────────────────────────────────────── */
     .file-chooser, button { background-color: yellow; color: black; border: none;
       padding: 8px 12px; margin: 4px; cursor: pointer; border-radius: 6px; font-weight: bold;
       touch-action: manipulation; -webkit-appearance: none; }
@@ -21,11 +18,7 @@
     .toggle-btn { background-color: #222; color: gold; border: 1px solid gold; padding: 5px 10px; }
     .toggle-btn.active { background-color: gold; color: black; }
     button:active, .file-chooser:active { opacity: 0.75; }
-
-    /* ── Clock ────────────────────────────────────────────────────── */
     #clock { position: absolute; top: 10px; right: 20px; font-size: 24px; font-weight: bold; color: gold; }
-
-    /* ── Playlist ─────────────────────────────────────────────────── */
     #playlist { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
       margin-top: 10px; border: 1px solid gold; padding: 10px; }
     .track-item { display: flex; justify-content: space-between; margin-bottom: 4px;
@@ -39,41 +32,26 @@
     .track-info { display: flex; flex-direction: column; flex: 1; gap: 2px; min-width: 0; }
     .track-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .track-meta { font-size: 12px; color: #ccc; opacity: 0.8; }
-
-    /* ── Folder badge pills ───────────────────────────────────────── */
     .folder-badge { display: inline-block; font-size: 9px; font-weight: bold; padding: 1px 5px;
       border-radius: 10px; margin-left: 5px; vertical-align: middle; letter-spacing: 0.5px; }
     .folder-badge.best { background: #1a5c1a; color: #4dff4d; border: 1px solid #4dff4d; }
     .folder-badge.good { background: #3a2e00; color: #FFD700; border: 1px solid #FFD700; }
-
-    /* ── Remove button */
     .remove-btn { background: #1a0000; color: #ff4444; border: 1px solid #ff4444; padding: 4px 9px;
       border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;
       transition: background 0.15s; touch-action: manipulation; }
     .remove-btn:active, .remove-btn:hover { background: #ff4444; color: black; }
-
-    /* ── Compat hint ──────────────────────────────────────────────── */
     #compatHint { padding: 10px 12px 4px; font-size: 11px; color: gold; opacity: 0.5; letter-spacing: 0.6px; }
-
-    /* ── Alarm ────────────────────────────────────────────────────── */
     .alarm { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
     .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
     .day-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-
-    /* ── Volume / sliders panel ───────────────────────────────────── */
     .volume-controls { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
-
-    /* ── Progress bar ─────────────────────────────────────────────── */
     #progressContainer { width: 100%; background: rgba(255,215,0,0.12); border: 1px solid gold;
       height: 12px; border-radius: 8px; margin-top: 8px; cursor: pointer; position: relative;
-      overflow: hidden;
-      touch-action: none; }
+      overflow: hidden; touch-action: none; }
     #progress { height: 100%; width: 0%; background: gold; border-radius: 8px; pointer-events: none; }
     #progressThumb { position: absolute; left: 0; top: 50%; transform: translate(-50%, -50%);
       width: 14px; height: 14px; border-radius: 50%; background: black;
       border: 3px solid gold; box-sizing: border-box; pointer-events: none; }
-
-    /* ── Alarm overlays ───────────────────────────────────────────── */
     #fixedAlarmControls { position: fixed; bottom: 0; left: 0; right: 0; background-color: red;
       padding: 15px; text-align: center; display: none; z-index: 999; box-shadow: 0 -4px 8px rgba(0,0,0,0.5);
       padding-bottom: max(15px, env(safe-area-inset-bottom)); }
@@ -84,29 +62,21 @@
       padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; min-height: 44px; }
     @keyframes alarm-flash { 0%{background-color:black;}50%{background-color:#660000;}100%{background-color:black;} }
     @keyframes alarm-pulse { 0%{border-color:red;}50%{border-color:yellow;}100%{border-color:red;} }
-
-    /* ── Video container — FIX: constrained to 320px like old player ── */
     #videoContainer { display: none; margin-top: 10px; border: 2px solid gold; border-radius: 8px;
       overflow: hidden; max-width: 320px; }
     #videoPlayer { width: 100%; display: block; }
     #pipBtn { margin-top: 8px; }
-
-    /* ── Range inputs ─────────────────────────────────────────────── */
     input[type="range"] { -webkit-appearance: none; appearance: none; height: 8px; background: #222;
       border: 1px solid gold; border-radius: 5px; outline: none; cursor: pointer; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
       width: 20px; height: 20px; background: gold; border: 2px solid black; border-radius: 50%; cursor: pointer; }
     input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: gold; border: 2px solid black; border-radius: 50%; cursor: pointer; }
-
-    /* ── Checkboxes ───────────────────────────────────────────────── */
     input[type="checkbox"] { -webkit-appearance: none; -moz-appearance: none; appearance: none;
       width: 20px; height: 20px; border: 2px solid gold; background: black; border-radius: 3px;
       cursor: pointer; position: relative; vertical-align: middle; flex-shrink: 0; }
     input[type="checkbox"]:checked { background: gold; }
     input[type="checkbox"]:checked::after { content: '✓'; position: absolute; color: black;
       font-size: 14px; font-weight: bold; top: -1px; left: 2px; }
-
-    /* ── Time input ───────────────────────────────────────────────── */
     input[type="time"] { background: black; color: gold; border: 2px solid gold; padding: 6px 10px;
       border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;
       -webkit-appearance: none; min-height: 38px; }
@@ -120,25 +90,17 @@
     input[type="time"]::-webkit-datetime-edit-hour-field:focus,
     input[type="time"]::-webkit-datetime-edit-minute-field:focus,
     input[type="time"]::-webkit-datetime-edit-ampm-field:focus { background: gold; color: black; }
-
-    /* ── Scrollbar hide ───────────────────────────────────────────── */
     ::-webkit-scrollbar { display: none; }
     * { scrollbar-width: none; -ms-overflow-style: none; }
-
-    /* ── Visualizer ───────────────────────────────────────────────── */
     #vizWrapper { display: none; margin-bottom: 14px; }
     .viz-label { font-size: 11px; color: rgba(255,215,0,0.5); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
     #visualizerCanvas { width: 100%; height: 90px; display: block; background: #000; border: 1px solid gold; border-radius: 6px; }
-
-    /* ── Slider grid ──────────────────────────────────────────────── */
     .slider-grid { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
     .slider-col { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
     .slider-col label { font-size: 13px; color: gold; font-weight: bold; letter-spacing: 0.5px; }
     .slider-row { display: flex; align-items: center; gap: 10px; }
     .slider-row input[type="range"] { width: 160px; }
     .slider-val { font-size: 13px; color: gold; min-width: 70px; }
-
-    /* ── Subfolder diagram ────────────────────────────────────────── */
     #subfoldersPanel { display: none; margin-top: 14px; border: 1px solid rgba(255,215,0,0.4);
       border-radius: 8px; padding: 16px 18px; background: #0d0d0d; }
     #subfoldersPanel h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
@@ -155,11 +117,7 @@
       border-radius: 8px; margin-left: 6px; vertical-align: middle; }
     .ft-badge.good { background: #3a2e00; color: #FFD700; border: 1px solid #FFD700; }
     .ft-badge.best { background: #1a5c1a; color: #4dff4d; border: 1px solid #4dff4d; }
-
-    /* ── Status bar ───────────────────────────────────────────────── */
     #status { margin-top: 8px; }
-
-    /* ═══ MOBILE — narrow screens ════════════════════════════════════ */
     @media (max-width: 480px) {
       body { margin: 10px 10px 80px; }
       #clock { font-size: 14px; top: 14px; right: 10px; }
@@ -169,11 +127,8 @@
       .slider-row input[type="range"] { min-width: 60px; }
       #subfoldersPanel { padding: 12px; }
       .folder-tree { font-size: 11px; padding: 10px 12px; }
-      /* FIX: removed oversized max-height from video on mobile — 320px container constrains it naturally */
       #videoContainer { max-width: 100%; }
     }
-
-    /* ═══ SAFARI / iOS specific ══════════════════════════════════════ */
     @supports (-webkit-touch-callout: none) {
       body { padding-bottom: env(safe-area-inset-bottom, 16px); }
     }
@@ -186,7 +141,6 @@
   <div id="fixedAlarmControls"><h3 style="color:white;margin:0 0 10px 0;">ALARM</h3><button id="fixedStopAlarmBtn">STOP ALARM</button></div>
   <label class="file-chooser" for="fileInput">Choose Files / Folders</label>
   <input type="file" id="fileInput" multiple accept=".mp3,.mp4" webkitdirectory directory />
-  <!-- Safari / iOS fallback: individual file picker without webkitdirectory -->
   <label class="file-chooser" for="fileInputSafari" id="safariPickerLabel" style="display:none;">Add Files</label>
   <input type="file" id="fileInputSafari" multiple accept=".mp3,.mp4" />
   <div id="status" style="margin-top:8px;">Current status: <span id="nowPlaying">None</span> | <span id="timer">00:00</span> | Volume: <span id="volumeDisplay">100%</span></div>
@@ -261,7 +215,6 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
 
-    /* ── Element refs ─────────────────────────────────────────────── */
     const fileInput          = document.getElementById('fileInput');
     const fileInputSafari    = document.getElementById('fileInputSafari');
     const audio              = document.getElementById('audioPlayer');
@@ -302,7 +255,6 @@
     const progressThumb      = document.getElementById('progressThumb');
     const vizWrapper         = document.getElementById('vizWrapper');
 
-    /* ── Safari / iOS detection ───────────────────────────────────── */
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (isIOS) {
@@ -311,8 +263,9 @@
       document.getElementById('safariPickerLabel').style.display='inline-block';
     }
 
-    /* ── State ────────────────────────────────────────────────────── */
-    let playlist = [], currentTrackIndex = 0, currentTrack = null, currentMediaElement = null;
+    // FIX: currentTrackIndex starts at -1 so findNextFilteredIndex(-1) correctly
+    // resolves to index 0 (the first track in the list) on first Play press.
+    let playlist = [], currentTrackIndex = -1, currentTrack = null, currentMediaElement = null;
     let trackEndTimeout = null, timerInterval = null, pauseInterval = null, isPaused = false;
     let alarmSettings = [], alarmTimeout = null;
     let isRandomPauseEnabled = false, isAutoPipEnabled = false;
@@ -323,7 +276,6 @@
     let urlCache = {}, playbackRetryCount = 0, isVideoHidden = false;
     let pitchSemitones = 0;
 
-    /* ── Alarm sound ──────────────────────────────────────────────── */
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     (function generateAlarmSound() {
       const sr = audioContext.sampleRate, buf = audioContext.createBuffer(1, sr, sr);
@@ -338,7 +290,6 @@
       alarmSound.src = URL.createObjectURL(new Blob([ab],{type:'audio/wav'}));
     })();
 
-    /* ── Hide-video button ────────────────────────────────────────── */
     const hideVideoBtn = document.createElement('button');
     hideVideoBtn.textContent = 'Hide Video';
     Object.assign(hideVideoBtn.style,{marginTop:'8px',backgroundColor:'yellow',color:'black',border:'none',padding:'8px 12px',cursor:'pointer',borderRadius:'6px',fontWeight:'bold'});
@@ -354,7 +305,6 @@
       } catch(e){console.error("PiP error:",e);}
     });
 
-    /* ── Volume ───────────────────────────────────────────────────── */
     function applyVol() {
       const v = Number(volumeSlider.value)/100; audio.volume=v; video.volume=v;
       manualVolumeDisplay.textContent = Math.round(v*100)+'%';
@@ -362,7 +312,6 @@
     }
     volumeSlider.addEventListener('input', applyVol); applyVol();
 
-    /* ── Playback rate (speed × pitch) ───────────────────────────── */
     function applyPlaybackRate() {
       const speed = Number(speedSlider.value)/100;
       const combined = Math.max(0.1, Math.min(4.0, speed * Math.pow(2, pitchSemitones/12)));
@@ -371,7 +320,6 @@
     }
     speedSlider.addEventListener('input', applyPlaybackRate); applyPlaybackRate();
 
-    /* ── Clock ────────────────────────────────────────────────────── */
     function updateClock() {
       const now=new Date(); let h=now.getHours(); const ampm=h>=12?'PM':'AM'; h=h%12||12;
       clockDisplay.textContent=`${h}:${now.getMinutes().toString().padStart(2,'0')} ${ampm}`;
@@ -379,7 +327,6 @@
     }
     setInterval(updateClock,1000); updateClock();
 
-    /* ── Stop alarm ───────────────────────────────────────────────── */
     stopAlarmBtn.addEventListener('click', stopAlarm);
     fixedStopAlarmBtn.addEventListener('click', stopAlarm);
     function stopAlarm() {
@@ -389,8 +336,6 @@
       if (savedPlaybackState&&savedPlaybackState.wasPlaying) {
         try {
           const elem = savedPlaybackState.isVideo?video:audio;
-          // FIX: prefer fresh URL from the original File reference so resume
-          // still works even if the old objectURL was revoked during shuffle.
           const savedFile = savedPlaybackState.trackFile;
           const resumeUrl = savedFile
             ? (urlCache[savedFile.name] || (urlCache[savedFile.name]=URL.createObjectURL(savedFile)))
@@ -415,7 +360,6 @@
       updatePlayPauseButton();
     }
 
-    /* ── Metadata ─────────────────────────────────────────────────── */
     async function loadMetadata(file) {
       return new Promise((resolve) => {
         const isVid=file.name.toLowerCase().endsWith('.mp4');
@@ -436,7 +380,6 @@
       });
     }
 
-    /* ── Folder detection ─────────────────────────────────────────── */
     function detectFolder(file) {
       const rp = (file.webkitRelativePath||'').toLowerCase()
         .replace(/\s+/g,'')
@@ -451,7 +394,6 @@
       return 'other';
     }
 
-    /* ── Filter helpers ───────────────────────────────────────────── */
     function trackMatchesFilter(file) {
       if (filterMode==='all') return true;
       return file._folder === filterMode;
@@ -471,7 +413,6 @@
       return -1;
     }
 
-    /* ── Playlist display ─────────────────────────────────────────── */
     async function updatePlaylistDisplay() {
       playlistDiv.innerHTML='';
       if(playlist.length===0){
@@ -523,17 +464,15 @@
       }
     }
 
-    /* ── Shuffle (internal) ───────────────────────────────────────── */
     function shuffleArray() {
-      // FIX: preserve the currently-playing track's cached URL so it doesn't
-      // get revoked mid-playback when auto-shuffling after file load.
       const currentName = currentTrack ? currentTrack.name : null;
       for (let k in urlCache) {
         if (k !== currentName) { try{URL.revokeObjectURL(urlCache[k]);}catch(e){} delete urlCache[k]; }
       }
       for (let i=playlist.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[playlist[i],playlist[j]]=[playlist[j],playlist[i]];}
       if (currentTrack) currentTrackIndex = playlist.findIndex(f=>f.name===currentTrack.name);
-      else currentTrackIndex=0;
+      // FIX: use -1 (not 0) so the next "play" resolves to index 0 (first track).
+      else currentTrackIndex = -1;
     }
 
     shuffleBtn.onclick=()=>{
@@ -543,7 +482,6 @@
       updatePlaylistDisplay();
     };
 
-    /* ── Add file to playlist ─────────────────────────────────────── */
     function addFileToPlaylist(file) {
       if(!file||!file.name) return;
       const lower=file.name.toLowerCase();
@@ -555,7 +493,6 @@
       }
     }
 
-    /* ── File input handler ───────────────────────────────────────── */
     async function handleFileInputChange(input) {
       Array.from(input.files||[]).forEach(addFileToPlaylist);
       shuffleArray();
@@ -565,18 +502,12 @@
     fileInput.addEventListener('change', ()=>handleFileInputChange(fileInput));
     fileInputSafari.addEventListener('change', ()=>handleFileInputChange(fileInputSafari));
 
-    /* ── Stop all media ───────────────────────────────────────────── */
-    // FIX: removed the onended nullify/restore pattern which could leave
-    // handlers permanently unset if stopAllMedia was called in rapid succession.
-    // Instead we clear src/pause immediately — the ended event cannot fire
-    // on an element with no src, so there is no double-trigger risk.
     function stopAllMedia(){
       audio.pause(); video.pause();
       audio.src=''; video.src='';
       audio.load(); video.load();
     }
 
-    /* ── Play specific track ──────────────────────────────────────── */
     function playSpecificTrack(index) {
       if(isAlarmActive) return; if(index<0||index>=playlist.length) return;
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
@@ -592,8 +523,6 @@
         nowPlaying.textContent='Loading: '+file.name;
         elem.loop=isLoopEnabled;
         elem.src=url; elem.load();
-        // FIX: use readyFired flag so only the first of canplaythrough/canplay wins,
-        // preventing double-play attempts on Safari which fires both events.
         let readyFired=false;
         function onReady(){
           if(readyFired) return; readyFired=true;
@@ -614,7 +543,6 @@
       } catch(e){console.error("Error preparing:",e);nowPlaying.textContent="Error preparing track";}
     }
 
-    /* ── Play next track (filter-aware) ──────────────────────────── */
     function playNextTrack() {
       playbackRetryCount=0; if(isAlarmActive) return;
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
@@ -631,7 +559,6 @@
       playSpecificTrack(nextIndex);
     }
 
-    /* ── Timer / progress ─────────────────────────────────────────── */
     function updateTimer() {
       if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
       clearInterval(timerInterval);
@@ -666,7 +593,6 @@
     window.addEventListener('touchmove',(e)=>{if(isSeeking){e.preventDefault();seekToEvent(e);}},{passive:false});
     window.addEventListener('touchend',(e)=>{if(isSeeking){seekToEvent(e);isSeeking=false;}});
 
-    /* ── Play/Pause button ────────────────────────────────────────── */
     function updatePlayPauseButton(){
       if(isAlarmActive){playPauseBtn.textContent='Alarm Active';playPauseBtn.disabled=true;return;}
       if(currentRandomPause){playPauseBtn.textContent='Skip Pause';playPauseBtn.disabled=false;return;}
@@ -698,7 +624,6 @@
       }
     };
 
-    /* ── Seek 5s ──────────────────────────────────────────────────── */
     rewind5Btn.addEventListener('click',()=>{
       const elem=currentMediaElement||audio;
       if(elem.src&&!isNaN(elem.duration)){const t=elem.currentTime-5;if(t<0){if(currentTrackIndex>0)playSpecificTrack(currentTrackIndex-1);else elem.currentTime=0;}else elem.currentTime=t;updateProgress();}
@@ -708,7 +633,6 @@
       if(elem.src&&!isNaN(elem.duration)){const t=elem.currentTime+5;if(t>=elem.duration){if(currentTrackIndex<playlist.length-1)playSpecificTrack(currentTrackIndex+1);else elem.currentTime=elem.duration;}else elem.currentTime=t;updateProgress();}
     });
 
-    /* ── Skip ─────────────────────────────────────────────────────── */
     skipBtn.onclick=()=>{
       if(isAlarmActive) return; const elem=currentMediaElement||audio; elem.pause();
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
@@ -718,7 +642,6 @@
       playNextTrack();
     };
 
-    /* ── Random pauses ────────────────────────────────────────────── */
     randomPauseBtn.onclick=()=>{
       isRandomPauseEnabled=!isRandomPauseEnabled;
       randomPauseBtn.classList.toggle('active',isRandomPauseEnabled);
@@ -740,7 +663,6 @@
       },1000);
     }
 
-    /* ── On ended ─────────────────────────────────────────────────── */
     function onAudioEnded(){ if(isRandomPauseEnabled)startRandomPause(); else playNextTrack(); }
     async function onVideoEnded(){
       if(document.pictureInPictureElement)try{await document.exitPictureInPicture();}catch(e){}
@@ -750,7 +672,6 @@
     audio.onended=onAudioEnded;
     video.onended=onVideoEnded;
 
-    /* ── Alarms ───────────────────────────────────────────────────── */
     function checkAlarms(){
       if(isAlarmActive) return; const now=new Date();
       const ct=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
@@ -804,7 +725,6 @@
     }
     addAlarmBtn.addEventListener('click',addAlarm);
 
-    /* ── Media Session ────────────────────────────────────────────── */
     if('mediaSession' in navigator){
       try{
         navigator.mediaSession.setActionHandler('play',()=>{try{playPauseBtn.click();}catch(e){}});
@@ -817,25 +737,18 @@
         navigator.mediaSession.setActionHandler('previoustrack',()=>{try{rewind5Btn.click();}catch(e){}});
       }catch(e){console.warn("MediaSession not available:",e);}
     }
-    window.addEventListener('beforeunload',()=>{for(let k in urlCache){try{URL.revokeObjectURL(urlCache[k]);}catch(e){}}});
+    window.addEventListener('beforeunload',()=>{for(let k in urlCache){try{URL.revokeObjectURL(urlCache[k]);}catch(e){}}}); 
 
-    /* ── Loop ─────────────────────────────────────────────────────── */
     loopBtn.addEventListener('click',()=>{
       isLoopEnabled=!isLoopEnabled; audio.loop=isLoopEnabled; video.loop=isLoopEnabled;
       loopBtn.classList.toggle('active',isLoopEnabled);
     });
-
-    /* ── Auto PIP ─────────────────────────────────────────────────── */
     autoPipBtn.onclick=()=>{isAutoPipEnabled=!isAutoPipEnabled;autoPipBtn.classList.toggle('active',isAutoPipEnabled);};
-
-    /* ── Visualizer toggle ────────────────────────────────────────── */
     visualizerBtn.addEventListener('click',()=>{
       isVisualizerEnabled=!isVisualizerEnabled;
       vizWrapper.style.display=isVisualizerEnabled?'block':'none';
       visualizerBtn.classList.toggle('active',isVisualizerEnabled);
     });
-
-    /* ── Subfolders toggle ────────────────────────────────────────── */
     subfoldersBtn.addEventListener('click',()=>{
       const on = subfoldersPanel.style.display!=='block';
       subfoldersPanel.style.display = on ? 'block' : 'none';
@@ -843,7 +756,6 @@
       if(on) subfoldersPanel.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
 
-    /* ── Filter buttons ───────────────────────────────────────────── */
     function setFilter(mode){
       filterMode = (filterMode===mode) ? 'all' : mode;
       bestTracksBtn.classList.toggle('active', filterMode==='best');
@@ -857,7 +769,6 @@
     bestTracksBtn.addEventListener('click',()=>setFilter('best'));
     goodTracksBtn.addEventListener('click',()=>setFilter('good'));
 
-    /* ── Web Audio graph (Visualizer + EQ) ───────────────────────── */
     function resumeAudioCtx(){ if(audioContext.state==='suspended') audioContext.resume().catch(()=>{}); }
     document.addEventListener('click', resumeAudioCtx);
     document.addEventListener('touchstart', resumeAudioCtx, {passive:true});
@@ -875,7 +786,6 @@
     audio.addEventListener('play',()=>connectToGraph(audio));
     video.addEventListener('play',()=>connectToGraph(video));
 
-    /* ── Visualizer canvas ────────────────────────────────────────── */
     const vizCanvas=document.getElementById('visualizerCanvas');
     const vizCtx=vizCanvas.getContext('2d');
     function syncCanvasSize(){const w=vizCanvas.offsetWidth||600,h=vizCanvas.offsetHeight||90;if(vizCanvas.width!==w||vizCanvas.height!==h){vizCanvas.width=w;vizCanvas.height=h;}}
@@ -903,7 +813,6 @@
     }
     drawVisualizer();
 
-    /* ── Frequency slider (high-shelf EQ) ────────────────────────── */
     const frequencySlider=document.getElementById('frequencySlider');
     const frequencyDisplay=document.getElementById('frequencyDisplay');
     frequencySlider.addEventListener('input',()=>{
@@ -913,7 +822,6 @@
       else frequencyDisplay.textContent=`Treble +${Math.round(gain)} dB`;
     });
 
-    /* ── Pitch slider ─────────────────────────────────────────────── */
     const pitchSlider=document.getElementById('pitchSlider');
     const pitchDisplay=document.getElementById('pitchDisplay');
     pitchSlider.addEventListener('input',()=>{
@@ -922,7 +830,6 @@
       applyPlaybackRate();
     });
 
-    /* ── Init ─────────────────────────────────────────────────────── */
     isPaused = true;
     updatePlaylistDisplay();
     updatePlayPauseButton();
