@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inflated Media Player Pro</title>
+  <!-- ★ Inline SVG favicon — no file path needed, works from any subfolder on GitHub Pages -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35' fill='gold' stroke='%23b8860b' stroke-width='3'/></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><polygon points='50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35' fill='gold' stroke='%23b8860b' stroke-width='3'/></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
@@ -209,7 +212,8 @@
     </p>
   </div>
 
-  <audio id="audioPlayer" controls style="display:none;" crossorigin="anonymous"></audio>
+  <!-- playsinline + webkit-playsinline are required for iOS to keep the audio session alive when the screen locks -->
+  <audio id="audioPlayer" controls playsinline webkit-playsinline x-webkit-airplay="allow" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" crossorigin="anonymous"></audio>
   <audio id="alarmSound" preload="auto" style="display:none;"></audio>
 
 <script>
@@ -513,6 +517,12 @@
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
       if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
       if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+
+      // FIX (broken-record): clear handlers BEFORE stopAllMedia so stale canplay
+      // events from the previous element don't fire into the new track's onReady.
+      audio.oncanplaythrough=null; audio.oncanplay=null; audio.onloadeddata=null;
+      video.oncanplaythrough=null; video.oncanplay=null; video.onloadeddata=null;
+
       stopAllMedia(); currentTrackIndex=index; const file=playlist[index]; isVideoHidden=false;
       try {
         currentTrack=file;
@@ -522,16 +532,35 @@
         const url=urlCache[file.name]||(urlCache[file.name]=URL.createObjectURL(file));
         nowPlaying.textContent='Loading: '+file.name;
         elem.loop=isLoopEnabled;
+
+        // FIX (broken-record): assign src AFTER clearing handlers, then load fresh.
         elem.src=url; elem.load();
+
         let readyFired=false;
         function onReady(){
           if(readyFired) return; readyFired=true;
-          elem.oncanplaythrough=null; elem.oncanplay=null;
+          elem.oncanplaythrough=null; elem.oncanplay=null; elem.onloadeddata=null;
           applyPlaybackRate(); applyVol();
+          // FIX (broken-record): hard-reset position to 0 so a stale buffered
+          // seek-point can't cause the "stuck first 3 seconds" loop.
+          try{ if(elem.currentTime!==0) elem.currentTime=0; }catch(e){}
           elem.play().then(()=>{
             isPaused=false;
             nowPlaying.textContent=file.name;
             updateTimer(); updatePlayPauseButton(); updatePlaylistDisplay();
+            // FIX (iOS background): set MediaSession metadata so the lock-screen
+            // media controls know the current track — this keeps the audio session
+            // alive and lets iOS continue playing when the screen locks.
+            if('mediaSession' in navigator){
+              try{
+                navigator.mediaSession.metadata=new MediaMetadata({
+                  title: file.name.replace(/\.[^.]+$/,''),
+                  artist: file.metadata?file.metadata.artist:'Inflated Media Player',
+                  album:  'Inflated Media Player Pro',
+                });
+                navigator.mediaSession.playbackState='playing';
+              }catch(e){}
+            }
             if(isVid&&isAutoPipEnabled) setTimeout(()=>{
               if(document.pictureInPictureEnabled&&!document.pictureInPictureElement)
                 video.requestPictureInPicture().catch(()=>{});
@@ -540,6 +569,9 @@
         }
         elem.oncanplaythrough=onReady;
         elem.oncanplay=onReady;
+        // loadeddata fires once the browser has the first frame of data —
+        // useful as a fallback on iOS when canplay fires late or not at all.
+        elem.onloadeddata=onReady;
       } catch(e){console.error("Error preparing:",e);nowPlaying.textContent="Error preparing track";}
     }
 
@@ -613,6 +645,7 @@
           elem.play().then(()=>{
             isPaused=false;
             nowPlaying.textContent=currentTrack?currentTrack.name:'';
+            if('mediaSession' in navigator) try{navigator.mediaSession.playbackState='playing';}catch(e){}
             updatePlayPauseButton();
           }).catch(()=>playNextTrack());
         }
@@ -620,6 +653,7 @@
         elem.pause();
         isPaused=true;
         nowPlaying.textContent=currentTrack?currentTrack.name+' (Paused)':'None';
+        if('mediaSession' in navigator) try{navigator.mediaSession.playbackState='paused';}catch(e){}
         updatePlayPauseButton();
       }
     };
@@ -735,8 +769,35 @@
           try{skipBtn.click();}catch(e){try{playNextTrack();}catch(e2){}}
         });
         navigator.mediaSession.setActionHandler('previoustrack',()=>{try{rewind5Btn.click();}catch(e){}});
+        // Seek support for the iOS lock-screen scrubber
+        try{
+          navigator.mediaSession.setActionHandler('seekto',(d)=>{
+            const elem=currentMediaElement||audio;
+            if(elem&&!isNaN(elem.duration)){elem.currentTime=d.seekTime;updateProgress();}
+          });
+        }catch(e){}
       }catch(e){console.warn("MediaSession not available:",e);}
     }
+
+    // FIX (iOS background): when the page becomes visible again after the screen
+    // was locked, iOS sometimes leaves the audio element paused even though our
+    // isPaused flag says it should be playing.  Re-kick it here so playback
+    // resumes exactly like Spotify does after unlocking the phone.
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden) return;           // screen just locked — nothing to do
+      if(!currentTrack||isPaused) return;   // we intentionally paused — leave it
+      const elem=currentMediaElement||audio;
+      if(elem&&elem.paused){
+        // Re-resume with a tiny delay to let iOS settle its audio session
+        setTimeout(()=>{
+          if(!isPaused&&elem.paused){
+            elem.play().then(()=>{
+              if('mediaSession' in navigator) try{navigator.mediaSession.playbackState='playing';}catch(e){}
+            }).catch(()=>{});
+          }
+        },300);
+      }
+    });
     window.addEventListener('beforeunload',()=>{for(let k in urlCache){try{URL.revokeObjectURL(urlCache[k]);}catch(e){}}}); 
 
     loopBtn.addEventListener('click',()=>{
@@ -837,3 +898,4 @@
 </script>
 </body>
 </html>
+
