@@ -4,9 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inflated Media Player Pro</title>
-  <!-- ★ Inline SVG favicon — no file path needed, works from any subfolder on GitHub Pages -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35' fill='gold' stroke='%23b8860b' stroke-width='3'/></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><polygon points='50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35' fill='gold' stroke='%23b8860b' stroke-width='3'/></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
@@ -43,7 +40,6 @@
       border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;
       transition: background 0.15s; touch-action: manipulation; }
     .remove-btn:active, .remove-btn:hover { background: #ff4444; color: black; }
-    #compatHint { padding: 10px 12px 4px; font-size: 11px; color: gold; opacity: 0.5; letter-spacing: 0.6px; }
     .alarm { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
     .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
     .day-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
@@ -104,6 +100,22 @@
     .slider-row { display: flex; align-items: center; gap: 10px; }
     .slider-row input[type="range"] { width: 160px; }
     .slider-val { font-size: 13px; color: gold; min-width: 70px; }
+    #searchBar { display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 4px; }
+    #searchInput { background: #111; color: gold; border: 1px solid rgba(255,215,0,0.4); border-radius: 6px;
+      padding: 6px 10px; font-size: 13px; flex: 1; outline: none; min-height: 34px; transition: border-color 0.2s; }
+    #searchInput:focus { border-color: gold; border-width: 2px; }
+    #searchInput::placeholder { color: rgba(255,215,0,0.3); }
+    #searchClear { background: #1a1a1a; color: rgba(255,215,0,0.7); border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 12px; white-space: nowrap;
+      display: none; line-height: 1; min-height: 34px; }
+    #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; }
+    #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
+    #compatHintInline { font-size: 11px; color: gold; opacity: 0.45; white-space: nowrap; letter-spacing: 0.4px;
+      transition: opacity 3s ease; pointer-events: none; }
+    #compatHintInline.hidden { opacity: 0; }
+    .track-item.search-hidden { display: none; }
+    /* Previous button — desktop/laptop only */
+    @media (pointer: coarse) { #prevBtn { display: none !important; } }
     #subfoldersPanel { display: none; margin-top: 14px; border: 1px solid rgba(255,215,0,0.4);
       border-radius: 8px; padding: 16px 18px; background: #0d0d0d; }
     #subfoldersPanel h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
@@ -154,6 +166,7 @@
     <button id="forward5Btn">+5s</button>
     <button id="shuffleBtn">Shuffle</button>
     <button id="skipBtn">Skip</button>
+    <button id="prevBtn">Previous</button>
     <button id="randomPauseBtn" class="toggle-btn">Random Pauses</button>
     <button id="autoPipBtn"     class="toggle-btn">Auto PIP</button>
     <button id="loopBtn"        class="toggle-btn">Loop</button>
@@ -165,6 +178,12 @@
 
   <div id="progressContainer" title="Click or drag to seek"><div id="progress"></div><div id="progressThumb"></div></div>
   <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
+  <div id="searchBar">
+    <input type="text" id="searchInput" placeholder="Search tracks…" autocomplete="off" spellcheck="false" />
+    <button id="searchClear">✕</button>
+    <span id="searchCount"></span>
+    <span id="compatHintInline">Compatible With Mp3 &amp; Mp4</span>
+  </div>
   <div id="playlist"></div>
 
   <div class="volume-controls">
@@ -210,10 +229,23 @@
     <p style="margin:10px 0 0; font-size:11px; color:rgba(255,215,0,0.4);">
       ⚠️ Drag-and-drop folder upload requires a Chromium-based browser (Chrome, Edge). Safari on iOS supports adding individual files only — subfolder detection will not work on iOS.
     </p>
+
+    <h4 style="margin-top:18px;">⌨️ Keyboard Shortcuts <span style="font-size:10px;color:rgba(255,215,0,0.35);font-weight:normal;">(desktop only)</span></h4>
+    <div class="folder-tree" style="line-height:2;">
+      <div><span style="color:gold;font-weight:bold;">Space</span> &nbsp;&nbsp;&nbsp;<span class="ft-dim">Play / Pause</span></div>
+      <div><span style="color:gold;font-weight:bold;">← →</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Seek -5s / +5s</span></div>
+      <div><span style="color:gold;font-weight:bold;">N</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Skip to next track</span></div>
+      <div><span style="color:gold;font-weight:bold;">P</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Previous track</span></div>
+      <div><span style="color:gold;font-weight:bold;">M</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Mute / Unmute</span></div>
+      <div><span style="color:gold;font-weight:bold;">↑ ↓</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume +5% / -5%</span></div>
+    </div>
+
+    <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
+    <p>Name any <code style="color:gold;">.mp3</code> or <code style="color:gold;">.mp4</code> file <strong>Add_Alarm</strong> (e.g. <code style="color:gold;">Add_Alarm.mp3</code>) and upload it with your music. The player will automatically pull it out of the playlist and use it as your alarm sound — it will never appear in the track list. It can live in any subfolder (Best, Good, or root). If you upload more than one <strong>Add_Alarm</strong> file the player picks one at random each time an alarm fires, giving you dynamic rotating alarm sounds.</p>
+    <div id="customAlarmInfo" style="margin-top:8px;font-size:12px;color:rgba(255,215,0,0.65);"></div>
   </div>
 
-  <!-- playsinline + webkit-playsinline are required for iOS to keep the audio session alive when the screen locks -->
-  <audio id="audioPlayer" controls playsinline webkit-playsinline x-webkit-airplay="allow" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" crossorigin="anonymous"></audio>
+  <audio id="audioPlayer" controls style="display:none;" crossorigin="anonymous"></audio>
   <audio id="alarmSound" preload="auto" style="display:none;"></audio>
 
 <script>
@@ -271,7 +303,7 @@
     // resolves to index 0 (the first track in the list) on first Play press.
     let playlist = [], currentTrackIndex = -1, currentTrack = null, currentMediaElement = null;
     let trackEndTimeout = null, timerInterval = null, pauseInterval = null, isPaused = false;
-    let alarmSettings = [], alarmTimeout = null;
+    let alarmSettings = [], alarmTimeout = null, alarmIdCounter = 0;
     let isRandomPauseEnabled = false, isAutoPipEnabled = false;
     let isLoopEnabled = false, isVisualizerEnabled = false;
     let filterMode = 'all';
@@ -279,6 +311,8 @@
     let isAlarmActive = false, savedPlaybackState = null, lastAlarmTime = null;
     let urlCache = {}, playbackRetryCount = 0, isVideoHidden = false;
     let pitchSemitones = 0;
+    let customAlarmFiles = []; // files named Add_Alarm — never go into playlist
+    let isMuted = false, preMuteVolume = 100;
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     (function generateAlarmSound() {
@@ -347,6 +381,9 @@
           elem.src=resumeUrl; elem.currentTime=savedPlaybackState.position;
           videoContainer.style.display=savedPlaybackState.isVideo?'block':'none';
           currentMediaElement=elem; currentTrack={name:savedPlaybackState.trackName};
+          // BUG FIX: restore currentTrackIndex so subsequent skip/prev work correctly
+          const restoredIdx = playlist.findIndex(f=>f.name===savedPlaybackState.trackName);
+          if (restoredIdx !== -1) currentTrackIndex = restoredIdx;
           isPaused=true;
           updatePlayPauseButton();
           setTimeout(()=>{
@@ -416,14 +453,24 @@
       }
       return -1;
     }
+    function findPrevFilteredIndex(beforeIndex) {
+      if (!playlist.length) return -1;
+      for (let i=1; i<=playlist.length; i++) {
+        const idx = ((beforeIndex-i) % playlist.length + playlist.length) % playlist.length;
+        if (trackMatchesFilter(playlist[idx])) return idx;
+      }
+      return -1;
+    }
 
     async function updatePlaylistDisplay() {
       playlistDiv.innerHTML='';
+      // Hide the inline compat hint once files are loaded
+      const hintEl = document.getElementById('compatHintInline');
+      if (playlist.length > 0 && hintEl && !hintEl.classList.contains('hidden')) {
+        // Short delay so user sees the hint briefly, then fade
+        setTimeout(() => hintEl.classList.add('hidden'), 400);
+      }
       if(playlist.length===0){
-        const hint=document.createElement('div');
-        hint.id='compatHint';
-        hint.textContent='Compatible With Mp3 & Mp4 Formats';
-        playlistDiv.appendChild(hint);
         return;
       }
       for (let index=0; index<playlist.length; index++) {
@@ -466,6 +513,8 @@
         trackItem.appendChild(left); trackItem.appendChild(removeBtn);
         playlistDiv.appendChild(trackItem);
       }
+      // Re-apply any active search query after playlist re-renders
+      if (typeof applySearch === 'function') applySearch();
     }
 
     function shuffleArray() {
@@ -486,10 +535,37 @@
       updatePlaylistDisplay();
     };
 
+    function isAlarmFile(file) {
+      // Strip extension and check if base name (case-insensitive) is "add_alarm"
+      const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/\s+/g,'_');
+      return base === 'add_alarm';
+    }
+
+    function updateCustomAlarmInfo() {
+      const el = document.getElementById('customAlarmInfo');
+      if (!el) return;
+      if (customAlarmFiles.length === 0) {
+        el.textContent = '';
+      } else if (customAlarmFiles.length === 1) {
+        el.innerHTML = `✅ Custom alarm loaded: <strong>${customAlarmFiles[0].name}</strong>`;
+      } else {
+        el.innerHTML = `✅ ${customAlarmFiles.length} custom alarm sounds loaded — one will be picked at random each alarm:<br>` +
+          customAlarmFiles.map(f=>`&nbsp;&nbsp;• ${f.name}`).join('<br>');
+      }
+    }
+
     function addFileToPlaylist(file) {
       if(!file||!file.name) return;
       const lower=file.name.toLowerCase();
       if(!lower.endsWith('.mp3')&&!lower.endsWith('.mp4')) return;
+      // Intercept Add_Alarm files
+      if (isAlarmFile(file)) {
+        if (!customAlarmFiles.find(f=>f.name===file.name)) {
+          customAlarmFiles.push(file);
+          updateCustomAlarmInfo();
+        }
+        return;
+      }
       if(!playlist.find(f=>f.name===file.name)){
         file._folder=detectFolder(file);
         file._media={author:'ModMaster'};
@@ -517,12 +593,7 @@
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
       if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
       if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
-
-      // FIX (broken-record): clear handlers BEFORE stopAllMedia so stale canplay
-      // events from the previous element don't fire into the new track's onReady.
-      audio.oncanplaythrough=null; audio.oncanplay=null; audio.onloadeddata=null;
-      video.oncanplaythrough=null; video.oncanplay=null; video.onloadeddata=null;
-
+      currentRandomPause = null; // BUG FIX: always clear any active random pause state
       stopAllMedia(); currentTrackIndex=index; const file=playlist[index]; isVideoHidden=false;
       try {
         currentTrack=file;
@@ -532,35 +603,16 @@
         const url=urlCache[file.name]||(urlCache[file.name]=URL.createObjectURL(file));
         nowPlaying.textContent='Loading: '+file.name;
         elem.loop=isLoopEnabled;
-
-        // FIX (broken-record): assign src AFTER clearing handlers, then load fresh.
         elem.src=url; elem.load();
-
         let readyFired=false;
         function onReady(){
           if(readyFired) return; readyFired=true;
-          elem.oncanplaythrough=null; elem.oncanplay=null; elem.onloadeddata=null;
+          elem.oncanplaythrough=null; elem.oncanplay=null;
           applyPlaybackRate(); applyVol();
-          // FIX (broken-record): hard-reset position to 0 so a stale buffered
-          // seek-point can't cause the "stuck first 3 seconds" loop.
-          try{ if(elem.currentTime!==0) elem.currentTime=0; }catch(e){}
           elem.play().then(()=>{
             isPaused=false;
             nowPlaying.textContent=file.name;
             updateTimer(); updatePlayPauseButton(); updatePlaylistDisplay();
-            // FIX (iOS background): set MediaSession metadata so the lock-screen
-            // media controls know the current track — this keeps the audio session
-            // alive and lets iOS continue playing when the screen locks.
-            if('mediaSession' in navigator){
-              try{
-                navigator.mediaSession.metadata=new MediaMetadata({
-                  title: file.name.replace(/\.[^.]+$/,''),
-                  artist: file.metadata?file.metadata.artist:'Inflated Media Player',
-                  album:  'Inflated Media Player Pro',
-                });
-                navigator.mediaSession.playbackState='playing';
-              }catch(e){}
-            }
             if(isVid&&isAutoPipEnabled) setTimeout(()=>{
               if(document.pictureInPictureEnabled&&!document.pictureInPictureElement)
                 video.requestPictureInPicture().catch(()=>{});
@@ -569,9 +621,6 @@
         }
         elem.oncanplaythrough=onReady;
         elem.oncanplay=onReady;
-        // loadeddata fires once the browser has the first frame of data —
-        // useful as a fallback on iOS when canplay fires late or not at all.
-        elem.onloadeddata=onReady;
       } catch(e){console.error("Error preparing:",e);nowPlaying.textContent="Error preparing track";}
     }
 
@@ -645,7 +694,6 @@
           elem.play().then(()=>{
             isPaused=false;
             nowPlaying.textContent=currentTrack?currentTrack.name:'';
-            if('mediaSession' in navigator) try{navigator.mediaSession.playbackState='playing';}catch(e){}
             updatePlayPauseButton();
           }).catch(()=>playNextTrack());
         }
@@ -653,18 +701,31 @@
         elem.pause();
         isPaused=true;
         nowPlaying.textContent=currentTrack?currentTrack.name+' (Paused)':'None';
-        if('mediaSession' in navigator) try{navigator.mediaSession.playbackState='paused';}catch(e){}
         updatePlayPauseButton();
       }
     };
 
     rewind5Btn.addEventListener('click',()=>{
       const elem=currentMediaElement||audio;
-      if(elem.src&&!isNaN(elem.duration)){const t=elem.currentTime-5;if(t<0){if(currentTrackIndex>0)playSpecificTrack(currentTrackIndex-1);else elem.currentTime=0;}else elem.currentTime=t;updateProgress();}
+      if(elem.src&&!isNaN(elem.duration)){
+        const t=elem.currentTime-5;
+        if(t<0){
+          // Find previous filtered track instead of blindly going to index-1
+          const prevIdx = findPrevFilteredIndex(currentTrackIndex);
+          if(prevIdx!==-1) playSpecificTrack(prevIdx); else elem.currentTime=0;
+        } else { elem.currentTime=t; updateProgress(); }
+      }
     });
     forward5Btn.addEventListener('click',()=>{
       const elem=currentMediaElement||audio;
-      if(elem.src&&!isNaN(elem.duration)){const t=elem.currentTime+5;if(t>=elem.duration){if(currentTrackIndex<playlist.length-1)playSpecificTrack(currentTrackIndex+1);else elem.currentTime=elem.duration;}else elem.currentTime=t;updateProgress();}
+      if(elem.src&&!isNaN(elem.duration)){
+        const t=elem.currentTime+5;
+        if(t>=elem.duration){
+          // Use findNextFilteredIndex to respect filter at track boundaries
+          const nextIdx=findNextFilteredIndex(currentTrackIndex);
+          if(nextIdx!==-1) playSpecificTrack(nextIdx); else elem.currentTime=elem.duration;
+        } else { elem.currentTime=t; updateProgress(); }
+      }
     });
 
     skipBtn.onclick=()=>{
@@ -675,6 +736,70 @@
       if(currentRandomPause){currentRandomPause=null;nowPlaying.textContent='Skipped random pause';}
       playNextTrack();
     };
+
+    const prevBtn = document.getElementById('prevBtn');
+    if (prevBtn) {
+      prevBtn.onclick = () => {
+        if(isAlarmActive) return;
+        if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
+        if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
+        if(currentRandomPause){currentRandomPause=null;}
+        const prevIdx = findPrevFilteredIndex(currentTrackIndex);
+        if (prevIdx !== -1) playSpecificTrack(prevIdx);
+      };
+    }
+
+    // Keyboard shortcuts — desktop/pointer:fine devices only
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    if (!isTouch) {
+      let kbMuted = false, kbPreMuteVol = 100;
+      document.addEventListener('keydown', (e) => {
+        // Don't fire when typing in an input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const elem = currentMediaElement || audio;
+        switch(e.key) {
+          case ' ':
+            e.preventDefault();
+            playPauseBtn.click();
+            break;
+          case 'ArrowLeft':
+            e.preventDefault();
+            rewind5Btn.click();
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            forward5Btn.click();
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            volumeSlider.value = Math.min(100, parseInt(volumeSlider.value)+5);
+            applyVol();
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            volumeSlider.value = Math.max(0, parseInt(volumeSlider.value)-5);
+            applyVol();
+            break;
+          case 'n': case 'N':
+            skipBtn.click();
+            break;
+          case 'p': case 'P':
+            if (prevBtn) prevBtn.click();
+            break;
+          case 'm': case 'M':
+            if (kbMuted) {
+              volumeSlider.value = kbPreMuteVol;
+              kbMuted = false;
+            } else {
+              kbPreMuteVol = parseInt(volumeSlider.value);
+              volumeSlider.value = 0;
+              kbMuted = true;
+            }
+            applyVol();
+            break;
+        }
+      });
+    }
 
     randomPauseBtn.onclick=()=>{
       isRandomPauseEnabled=!isRandomPauseEnabled;
@@ -709,7 +834,10 @@
     function checkAlarms(){
       if(isAlarmActive) return; const now=new Date();
       const ct=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-      const cd=now.getDay(); if(lastAlarmTime===ct) return;
+      const cd=now.getDay();
+      // Reset lastAlarmTime when the clock minute changes so alarm can fire again on future days
+      if(lastAlarmTime && lastAlarmTime !== ct) lastAlarmTime = null;
+      if(lastAlarmTime===ct) return;
       alarmSettings.forEach(({index})=>{
         const ti=document.getElementById(`alarmTime${index}`); if(!ti) return;
         const cont=ti.closest('.alarm-item'); if(!cont) return;
@@ -732,6 +860,12 @@
       if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
       if(currentRandomPause)currentRandomPause=null;
       alarmControls.style.display='block'; fixedAlarmControls.style.display='block';
+      // Use custom alarm sound if available, otherwise use generated beep
+      if (customAlarmFiles.length > 0) {
+        const pick = customAlarmFiles[Math.floor(Math.random()*customAlarmFiles.length)];
+        const aUrl = urlCache['__alarm__'+pick.name] || (urlCache['__alarm__'+pick.name] = URL.createObjectURL(pick));
+        alarmSound.src = aUrl;
+      }
       alarmSound.volume=1.0; alarmSound.loop=true; alarmSound.currentTime=0;
       alarmSound.play().catch(e=>console.error("Alarm sound error:",e));
       nowPlaying.textContent='ALARM ACTIVE'; timerDisplay.textContent='--:--';
@@ -740,9 +874,9 @@
     }
     function addAlarm(){
       if(alarmSettings.length>=3){alert("Maximum of 3 alarms allowed");return;}
-      const index=alarmSettings.length;
+      const index = alarmIdCounter++;
       const alarmItem=document.createElement('div'); alarmItem.className='alarm-item';
-      alarmItem.innerHTML=`<h4>Alarm #${index+1}</h4><input type="time" id="alarmTime${index}">
+      alarmItem.innerHTML=`<h4>Alarm #${alarmSettings.length+1}</h4><input type="time" id="alarmTime${index}">
         <div class="day-checkboxes">
           <label><input type="checkbox" class="day-check" value="0">Sun</label>
           <label><input type="checkbox" class="day-check" value="1">Mon</label>
@@ -768,37 +902,37 @@
           if(currentRandomPause){if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}currentRandomPause=null;}
           try{skipBtn.click();}catch(e){try{playNextTrack();}catch(e2){}}
         });
-        navigator.mediaSession.setActionHandler('previoustrack',()=>{try{rewind5Btn.click();}catch(e){}});
-        // Seek support for the iOS lock-screen scrubber
-        try{
-          navigator.mediaSession.setActionHandler('seekto',(d)=>{
-            const elem=currentMediaElement||audio;
-            if(elem&&!isNaN(elem.duration)){elem.currentTime=d.seekTime;updateProgress();}
-          });
-        }catch(e){}
+        navigator.mediaSession.setActionHandler('previoustrack',()=>{
+          if(isAlarmActive)return;
+          try{if(prevBtn)prevBtn.click();else rewind5Btn.click();}catch(e){}
+        });
       }catch(e){console.warn("MediaSession not available:",e);}
     }
-
-    // FIX (iOS background): when the page becomes visible again after the screen
-    // was locked, iOS sometimes leaves the audio element paused even though our
-    // isPaused flag says it should be playing.  Re-kick it here so playback
-    // resumes exactly like Spotify does after unlocking the phone.
-    document.addEventListener('visibilitychange',()=>{
-      if(document.hidden) return;           // screen just locked — nothing to do
-      if(!currentTrack||isPaused) return;   // we intentionally paused — leave it
-      const elem=currentMediaElement||audio;
-      if(elem&&elem.paused){
-        // Re-resume with a tiny delay to let iOS settle its audio session
-        setTimeout(()=>{
-          if(!isPaused&&elem.paused){
-            elem.play().then(()=>{
-              if('mediaSession' in navigator) try{navigator.mediaSession.playbackState='playing';}catch(e){}
-            }).catch(()=>{});
-          }
-        },300);
-      }
-    });
     window.addEventListener('beforeunload',()=>{for(let k in urlCache){try{URL.revokeObjectURL(urlCache[k]);}catch(e){}}}); 
+
+    // Search bar — VLC-style: filters display only, doesn't change playback
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    const searchCount = document.getElementById('searchCount');
+    let searchQuery = '';
+    function applySearch() {
+      searchQuery = searchInput.value.trim().toLowerCase();
+      const items = playlistDiv.querySelectorAll('.track-item');
+      let visible = 0, total = items.length;
+      items.forEach(item => {
+        const nameEl = item.querySelector('.track-name');
+        const text = (nameEl ? nameEl.textContent : '').toLowerCase();
+        if (!searchQuery || text.includes(searchQuery)) {
+          item.classList.remove('search-hidden'); visible++;
+        } else {
+          item.classList.add('search-hidden');
+        }
+      });
+      searchClear.style.display = searchQuery ? 'inline-block' : 'none';
+      searchCount.textContent = searchQuery ? `${visible} / ${total}` : '';
+    }
+    searchInput.addEventListener('input', applySearch);
+    searchClear.addEventListener('click', () => { searchInput.value=''; applySearch(); searchInput.focus(); });
 
     loopBtn.addEventListener('click',()=>{
       isLoopEnabled=!isLoopEnabled; audio.loop=isLoopEnabled; video.loop=isLoopEnabled;
@@ -823,8 +957,12 @@
       goodTracksBtn.classList.toggle('active', filterMode==='good');
       updatePlaylistDisplay();
       if (filterMode !== 'all') {
-        const firstIdx = findFirstFilteredIndex();
-        if (firstIdx !== -1) playSpecificTrack(firstIdx);
+        // Only jump to first filtered track if current track doesn't pass the filter
+        const currentPasses = currentTrack && playlist.find(f=>f.name===currentTrack.name) && trackMatchesFilter(playlist.find(f=>f.name===currentTrack.name));
+        if (!currentPasses) {
+          const firstIdx = findFirstFilteredIndex();
+          if (firstIdx !== -1) playSpecificTrack(firstIdx);
+        }
       }
     }
     bestTracksBtn.addEventListener('click',()=>setFilter('best'));
@@ -894,8 +1032,12 @@
     isPaused = true;
     updatePlaylistDisplay();
     updatePlayPauseButton();
+    // Auto-fade the compat hint after 2 minutes if no files loaded yet
+    setTimeout(() => {
+      const hintEl = document.getElementById('compatHintInline');
+      if (hintEl && playlist.length === 0) hintEl.classList.add('hidden');
+    }, 120000);
   });
 </script>
 </body>
 </html>
-
