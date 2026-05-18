@@ -19,9 +19,9 @@
     .toggle-btn { background-color: #222; color: gold; border: 1px solid gold; padding: 5px 10px; }
     .toggle-btn.active { background-color: gold; color: black; }
     button:active, .file-chooser:active { opacity: 0.75; }
-    #clock { position: absolute; top: 10px; right: 20px; font-size: 20px; font-weight: bold; color: gold; letter-spacing: 1px; }
+    #clock { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: gold; letter-spacing: 1px; }
     #playlist { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      margin-top: 10px; border: 1px solid gold; padding: 10px; }
+      margin-top: 10px; border: 1px solid gold; padding: 10px; min-height: 60px; }
     .track-item { display: flex; justify-content: space-between; margin-bottom: 4px;
       align-items: center; padding: 8px; border-radius: 4px; transition: background 0.2s; cursor: pointer; }
     .track-item:hover { background: rgba(255,215,0,0.1); }
@@ -44,7 +44,7 @@
     .alarm { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
     .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
     .day-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-    .volume-controls { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
+    .volume-controls { border: 1px solid gold; padding: 10px; border-radius: 4px; margin-top: 10px; }
     #progressContainer { width: 100%; background: rgba(255,215,0,0.12); border: 1px solid gold;
       height: 12px; border-radius: 8px; margin-top: 8px; cursor: pointer; position: relative;
       overflow: hidden; touch-action: none; }
@@ -101,7 +101,6 @@
     .slider-row { display: flex; align-items: center; gap: 10px; }
     .slider-row input[type="range"] { width: 160px; }
     .slider-val { font-size: 13px; color: gold; min-width: 70px; }
-    #searchBar { display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 4px; }
     #searchInput { background: #111; color: gold; border: 1px solid rgba(255,215,0,0.4); border-radius: 6px;
       padding: 6px 10px; font-size: 13px; flex: 1; outline: none; min-height: 34px; transition: border-color 0.2s; }
     #searchInput:focus { border-color: gold; border-width: 2px; }
@@ -111,10 +110,104 @@
       display: none; line-height: 1; min-height: 34px; }
     #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; }
     #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
-    #compatHintInline { font-size: 11px; color: gold; opacity: 0.45; white-space: nowrap; letter-spacing: 0.4px;
-      transition: opacity 3s ease; pointer-events: none; }
+    #compatHintInline { font-size: 11px; color: gold; opacity: 0.4; white-space: nowrap; letter-spacing: 0.4px;
+      transition: opacity 0.4s ease; pointer-events: none; padding-right: 4px; }
     #compatHintInline.hidden { opacity: 0; }
     .track-item.search-hidden { display: none; }
+    /* Fix: prevent long track names from pushing Remove button off-screen */
+    .track-left { min-width: 0; }
+    /* Empty playlist message */
+    .playlist-empty {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; min-height: 200px; gap: 10px;
+      color: rgba(255,215,0,0.35); text-align: center; padding: 20px;
+      pointer-events: none; user-select: none;
+    }
+    .playlist-empty-icon { font-size: 48px; opacity: 0.5; }
+    .playlist-empty-title { font-size: 15px; font-weight: bold; letter-spacing: 1px; color: rgba(255,215,0,0.5); }
+    .playlist-empty-sub { font-size: 12px; color: rgba(255,215,0,0.3); line-height: 1.6; }
+    /* ── Desktop: side-by-side layout when video is playing ── */
+    @media (pointer: fine) and (min-width: 700px) {
+      #videoWrapper { display: block; }
+      #videoWrapper.video-active {
+        display: flex;
+        flex-direction: row;
+        gap: 14px;
+        align-items: stretch;   /* both columns same height */
+        margin-top: 10px;
+      }
+      /* Video column: wider + stretches to fill the full height of the right panel */
+      #videoWrapper.video-active #videoContainer {
+        flex: 0 0 clamp(320px, 34%, 480px);
+        max-width: 480px;
+        margin-top: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      /* Video element fills all the vertical space above the PIP/Hide buttons */
+      #videoWrapper.video-active #videoPlayer {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        object-fit: contain;
+      }
+      #videoWrapper.video-active #mainLayout {
+        flex: 1 1 0;
+        min-width: 0;
+        margin-top: 0;
+      }
+      /* Tighten track-name column while video is active so names truncate
+         and the Remove button never gets squeezed off-screen */
+      #videoWrapper.video-active #mediaCol {
+        flex: 0 0 55% !important;
+      }
+    }
+    /* ── Desktop two-pane layout (pointer:fine + ≥700px) ── */
+    /* Search bar is now full-page-width, sitting above the video+panel area */
+    #searchBar {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 8px; margin-bottom: 8px;
+      width: 100%; box-sizing: border-box;
+    }
+    #mainLayout { margin-top: 0; }
+    #mediaPanel { display: block; }
+    #mediaCol { width: 100%; }
+    @media (pointer: fine) and (min-width: 700px) {
+      #searchInput { flex: 1; min-width: 0; }
+      /* Unified panel: playlist left 62%, divider, sliders right 38% */
+      #mediaPanel {
+        display: flex; align-items: stretch; gap: 0;
+        border: 1px solid gold; border-radius: 4px; overflow: hidden;
+      }
+      #mediaCol {
+        flex: 0 0 62%; min-width: 0;
+        border-right: 1px solid rgba(255,215,0,0.3);
+        display: flex; flex-direction: column;
+      }
+      #playlist {
+        height: 280px; max-height: 280px; min-height: 280px;
+        border: none; border-radius: 0; margin-top: 0;
+        overflow-y: auto;
+        transition: height 0.25s ease, max-height 0.25s ease;
+      }
+      /* When visualizer is on, playlist grows by the canvas height so no black gap */
+      #playlist.viz-expanded {
+        height: 392px; max-height: 392px;
+      }
+      #controlsCol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+      #controlsCol .volume-controls {
+        border: none; border-radius: 0; margin-top: 0;
+        flex: 1; display: flex; flex-direction: column; justify-content: center;
+        padding: 16px 14px;
+      }
+      /* Sliders fill column, no min-width fighting */
+      .slider-col { min-width: 0 !important; width: 100%; }
+      .slider-row input[type="range"] { flex: 1; width: 100%; min-width: 0; }
+      .slider-grid { flex-direction: column; gap: 18px; flex-wrap: nowrap; }
+      .slider-val { min-width: 46px; font-size: 12px; }
+      #controlsCol label { font-size: 12px; }
+      #controlsCol h3 { font-size: 13px; margin: 0 0 14px; }
+    }
     /* Previous button — desktop/laptop only */
     @media (pointer: coarse) { #prevBtn { display: none !important; } }
     #subfoldersPanel { display: none; margin-top: 14px; border: 1px solid rgba(255,215,0,0.4);
@@ -178,40 +271,49 @@
   </div>
 
   <div id="progressContainer" title="Click or drag to seek"><div id="progress"></div><div id="progressThumb"></div></div>
-  <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
   <div id="searchBar">
     <input type="text" id="searchInput" placeholder="Search tracks…" autocomplete="off" spellcheck="false" />
     <button id="searchClear">✕</button>
     <span id="searchCount"></span>
     <span id="compatHintInline">Compatible With Mp3 &amp; Mp4</span>
   </div>
-  <div id="playlist"></div>
-
-  <div class="volume-controls">
-    <div id="vizWrapper">
-      <div class="viz-label">Audio Visualizer</div>
-      <canvas id="visualizerCanvas" width="600" height="90"></canvas>
+  <div id="videoWrapper">
+  <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
+  <div id="mainLayout">
+    <div id="mediaPanel">
+      <div id="mediaCol">
+        <div id="playlist"></div>
+      </div>
+      <div id="controlsCol">
+        <div class="volume-controls">
+          <div id="vizWrapper">
+            <div class="viz-label">Audio Visualizer</div>
+            <canvas id="visualizerCanvas" width="600" height="90"></canvas>
+          </div>
+          <h3 style="margin:8px 0 14px;">Volume Control &amp; Playback Speed</h3>
+          <div class="slider-grid">
+            <div class="slider-col">
+              <label>Volume</label>
+              <div class="slider-row"><input type="range" id="volumeSlider" min="0" max="100" value="100"><span class="slider-val" id="manualVolumeDisplay">100%</span></div>
+            </div>
+            <div class="slider-col">
+              <label>Speed</label>
+              <div class="slider-row"><input type="range" id="speedSlider" min="25" max="200" value="100" step="25"><span class="slider-val" id="speedDisplay">1.00x</span></div>
+            </div>
+            <div class="slider-col">
+              <label>Frequency</label>
+              <div class="slider-row"><input type="range" id="frequencySlider" min="0" max="100" value="50"><span class="slider-val" id="frequencyDisplay">Flat</span></div>
+            </div>
+            <div class="slider-col">
+              <label>Pitch</label>
+              <div class="slider-row"><input type="range" id="pitchSlider" min="-12" max="12" value="0" step="1"><span class="slider-val" id="pitchDisplay">0 st</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <h3 style="margin:8px 0 12px;">Volume Control &amp; Playback Speed</h3>
-    <div class="slider-grid">
-      <div class="slider-col">
-        <label>Volume</label>
-        <div class="slider-row"><input type="range" id="volumeSlider" min="0" max="100" value="100"><span class="slider-val" id="manualVolumeDisplay">100%</span></div>
-      </div>
-      <div class="slider-col">
-        <label>Speed</label>
-        <div class="slider-row"><input type="range" id="speedSlider" min="25" max="200" value="100" step="25"><span class="slider-val" id="speedDisplay">1.00x</span></div>
-      </div>
-      <div class="slider-col">
-        <label>Frequency</label>
-        <div class="slider-row"><input type="range" id="frequencySlider" min="0" max="100" value="50"><span class="slider-val" id="frequencyDisplay">Flat</span></div>
-      </div>
-      <div class="slider-col">
-        <label>Pitch</label>
-        <div class="slider-row"><input type="range" id="pitchSlider" min="-12" max="12" value="0" step="1"><span class="slider-val" id="pitchDisplay">0 st</span></div>
-      </div>
-    </div>
-  </div>
+  </div><!-- /#mainLayout -->
+  </div><!-- /#videoWrapper -->
 
   <div class="alarm"><h3>Alarm Settings</h3><div id="alarms"></div><button id="addAlarmBtn">Add Alarm</button></div>
 
@@ -315,6 +417,17 @@
     let customAlarmFiles = []; // files named Add_Alarm — never go into playlist
     let isMuted = false, preMuteVolume = 100;
 
+    const videoWrapper = document.getElementById('videoWrapper');
+    function setVideoActive(show) {
+      videoContainer.style.display = show ? 'block' : 'none';
+      // Only apply side-by-side layout on pointer:fine (desktop/laptop) devices
+      if (window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) {
+        videoWrapper.classList.toggle('video-active', show);
+      } else {
+        videoWrapper.classList.remove('video-active');
+      }
+    }
+
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     (function generateAlarmSound() {
       const sr = audioContext.sampleRate, buf = audioContext.createBuffer(1, sr, sr);
@@ -335,12 +448,12 @@
     pipBtn.parentNode.insertBefore(hideVideoBtn, pipBtn.nextSibling);
     hideVideoBtn.addEventListener('click', async () => {
       if (document.pictureInPictureElement) try{await document.exitPictureInPicture();}catch(e){}
-      videoContainer.style.display='none'; isVideoHidden=true;
+      videoContainer.style.display='none'; isVideoHidden=true; setVideoActive(false);
     });
     pipBtn.addEventListener('click', async () => {
       try {
         if (document.pictureInPictureElement) await document.exitPictureInPicture();
-        else if (video&&video.src){videoContainer.style.display='block';isVideoHidden=false;await video.requestPictureInPicture();}
+        else if (video&&video.src){videoContainer.style.display='block';isVideoHidden=false;setVideoActive(true);await video.requestPictureInPicture();}
       } catch(e){console.error("PiP error:",e);}
     });
 
@@ -386,6 +499,7 @@
             : savedPlaybackState.trackUrl;
           elem.src=resumeUrl; elem.currentTime=savedPlaybackState.position;
           videoContainer.style.display=savedPlaybackState.isVideo?'block':'none';
+          setVideoActive(savedPlaybackState.isVideo);
           currentMediaElement=elem; currentTrack={name:savedPlaybackState.trackName};
           // BUG FIX: restore currentTrackIndex so subsequent skip/prev work correctly
           const restoredIdx = playlist.findIndex(f=>f.name===savedPlaybackState.trackName);
@@ -470,13 +584,18 @@
 
     async function updatePlaylistDisplay() {
       playlistDiv.innerHTML='';
-      // Hide the inline compat hint once files are loaded
+      // Hide the inline compat hint instantly once files are loaded
       const hintEl = document.getElementById('compatHintInline');
       if (playlist.length > 0 && hintEl && !hintEl.classList.contains('hidden')) {
-        // Short delay so user sees the hint briefly, then fade
-        setTimeout(() => hintEl.classList.add('hidden'), 400);
+        hintEl.classList.add('hidden');
       }
       if(playlist.length===0){
+        playlistDiv.innerHTML = `
+          <div class="playlist-empty">
+            <div class="playlist-empty-icon">🎵</div>
+            <div class="playlist-empty-title">No media loaded</div>
+            <div class="playlist-empty-sub">Click <strong style="color:rgba(255,215,0,0.6);">Choose Files / Folders</strong> above<br>to upload your MP3s and MP4s</div>
+          </div>`;
         return;
       }
       for (let index=0; index<playlist.length; index++) {
@@ -487,7 +606,8 @@
         if (currentTrack&&currentTrack.name===file.name) trackItem.classList.add('playing');
         if (!trackMatchesFilter(file)) trackItem.classList.add('filtered-out');
         const left=document.createElement('div');
-        left.style.cssText='display:flex;gap:10px;align-items:center;flex:1;';
+        left.className='track-left';
+        left.style.cssText='display:flex;gap:10px;align-items:center;flex:1;min-width:0;';
         const dh=document.createElement('span'); dh.className='drag-handle'; dh.textContent='☰';
         left.appendChild(dh);
         const ti=document.createElement('div'); ti.className='track-info';
@@ -613,6 +733,7 @@
         const isVid=file.name.toLowerCase().endsWith('.mp4');
         const elem=isVid?video:audio; currentMediaElement=elem;
         videoContainer.style.display=isVid?'block':'none';
+        setVideoActive(isVid);
         const url=urlCache[file.name]||(urlCache[file.name]=URL.createObjectURL(file));
         nowPlaying.textContent='Loading: '+file.name;
         elem.loop=isLoopEnabled;
@@ -838,7 +959,7 @@
     function onAudioEnded(){ if(isRandomPauseEnabled)startRandomPause(); else playNextTrack(); }
     async function onVideoEnded(){
       if(document.pictureInPictureElement)try{await document.exitPictureInPicture();}catch(e){}
-      if(!isVideoHidden)videoContainer.style.display='none'; isVideoHidden=false;
+      if(!isVideoHidden){ videoContainer.style.display='none'; setVideoActive(false); } isVideoHidden=false;
       if(isRandomPauseEnabled)startRandomPause(); else playNextTrack();
     }
     audio.onended=onAudioEnded;
@@ -959,6 +1080,10 @@
       isVisualizerEnabled=!isVisualizerEnabled;
       vizWrapper.style.display=isVisualizerEnabled?'block':'none';
       visualizerBtn.classList.toggle('active',isVisualizerEnabled);
+      // On desktop, grow playlist to fill the space the visualizer canvas adds
+      if (window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) {
+        playlistDiv.classList.toggle('viz-expanded', isVisualizerEnabled);
+      }
     });
     subfoldersBtn.addEventListener('click',()=>{
       const on = subfoldersPanel.style.display!=='block';
@@ -1004,7 +1129,13 @@
     const vizCanvas=document.getElementById('visualizerCanvas');
     const vizCtx=vizCanvas.getContext('2d');
     function syncCanvasSize(){const w=vizCanvas.offsetWidth||600,h=vizCanvas.offsetHeight||90;if(vizCanvas.width!==w||vizCanvas.height!==h){vizCanvas.width=w;vizCanvas.height=h;}}
-    syncCanvasSize(); window.addEventListener('resize',syncCanvasSize);
+    syncCanvasSize(); window.addEventListener('resize', () => {
+      syncCanvasSize();
+      // Re-evaluate video-active class on resize
+      if (videoContainer.style.display === 'block') {
+        setVideoActive(true);
+      }
+    });
     const freqBins=new Uint8Array(analyserNode.frequencyBinCount);
     const peakHold=new Float32Array(analyserNode.frequencyBinCount).fill(0);
     const peakDecay=0.015;
@@ -1048,11 +1179,11 @@
     isPaused = true;
     updatePlaylistDisplay();
     updatePlayPauseButton();
-    // Auto-fade the compat hint after 2 minutes if no files loaded yet
+    // Auto-fade the compat hint after 10 seconds if no files loaded yet
     setTimeout(() => {
       const hintEl = document.getElementById('compatHintInline');
       if (hintEl && playlist.length === 0) hintEl.classList.add('hidden');
-    }, 120000);
+    }, 10000);
   });
 </script>
 </body>
