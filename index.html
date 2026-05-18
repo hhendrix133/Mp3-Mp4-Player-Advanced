@@ -241,7 +241,7 @@
     </div>
 
     <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
-    <p>Name any <code style="color:gold;">.mp3</code> or <code style="color:gold;">.mp4</code> file <strong>Add_Alarm</strong> (e.g. <code style="color:gold;">Add_Alarm.mp3</code>) and upload it with your music. The player will automatically pull it out of the playlist and use it as your alarm sound — it will never appear in the track list. It can live in any subfolder (Best, Good, or root). If you upload more than one <strong>Add_Alarm</strong> file the player picks one at random each time an alarm fires, giving you dynamic rotating alarm sounds.</p>
+    <p>Name any <code style="color:gold;">.mp3</code> or <code style="color:gold;">.mp4</code> file <strong>Add_Alarm</strong> and upload it with your music. The player pulls it out of the playlist automatically — it will never appear in the track list. It can live in any subfolder (Best, Good, or root). Upload multiple alarm files and the player picks one at random each time an alarm fires. Numbered variants your OS creates are all recognised automatically: <code style="color:gold;">Add_Alarm.mp3</code>, <code style="color:gold;">Add_Alarm(1).mp3</code>, <code style="color:gold;">Add_Alarm(2).mp3</code>, <code style="color:gold;">Add_Alarm - Copy.mp3</code> — all work.</p>
     <div id="customAlarmInfo" style="margin-top:8px;font-size:12px;color:rgba(255,215,0,0.65);"></div>
   </div>
 
@@ -536,9 +536,16 @@
     };
 
     function isAlarmFile(file) {
-      // Strip extension and check if base name (case-insensitive) is "add_alarm"
-      const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/\s+/g,'_');
-      return base === 'add_alarm';
+      // Strip extension, normalise to lowercase, then check if the base name
+      // is "add_alarm" or any numbered/copy variant the OS might append:
+      // Add_Alarm(1).mp3  Add_Alarm (2).mp3  Add_Alarm - Copy.mp3  add_alarm_1.mp3
+      const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+      // Core name must start with "add_alarm"
+      if (!base.startsWith('add_alarm')) return false;
+      // What follows after "add_alarm" must be empty OR only spaces/underscores/
+      // hyphens/digits/parentheses/the word "copy" — nothing else
+      const suffix = base.slice('add_alarm'.length).replace(/[\s_\-()copy\d]/g, '');
+      return suffix === '';
     }
 
     function updateCustomAlarmInfo() {
