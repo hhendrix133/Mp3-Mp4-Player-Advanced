@@ -19,7 +19,7 @@
     .toggle-btn { background-color: #222; color: gold; border: 1px solid gold; padding: 5px 10px; }
     .toggle-btn.active { background-color: gold; color: black; }
     button:active, .file-chooser:active { opacity: 0.75; }
-    #clock { position: absolute; top: 10px; right: 20px; font-size: 24px; font-weight: bold; color: gold; }
+    #clock { position: absolute; top: 10px; right: 20px; font-size: 20px; font-weight: bold; color: gold; letter-spacing: 1px; }
     #playlist { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
       margin-top: 10px; border: 1px solid gold; padding: 10px; }
     .track-item { display: flex; justify-content: space-between; margin-bottom: 4px;
@@ -136,7 +136,7 @@
     #status { margin-top: 8px; }
     @media (max-width: 480px) {
       body { margin: 10px 10px 80px; }
-      #clock { font-size: 14px; top: 14px; right: 10px; }
+      #clock { font-size: 11px; top: 14px; right: 10px; }
       #controls { gap: 4px; }
       #playlist { max-height: 220px; padding: 6px; }
       .slider-col { flex: 1 1 140px; }
@@ -361,7 +361,9 @@
 
     function updateClock() {
       const now=new Date(); let h=now.getHours(); const ampm=h>=12?'PM':'AM'; h=h%12||12;
-      clockDisplay.textContent=`${h}:${now.getMinutes().toString().padStart(2,'0')} ${ampm}`;
+      const mm=now.getMinutes().toString().padStart(2,'0');
+      const ss=now.getSeconds().toString().padStart(2,'0');
+      clockDisplay.textContent=`${h}:${mm}:${ss} ${ampm}`;
       checkAlarms();
     }
     setInterval(updateClock,1000); updateClock();
@@ -372,6 +374,9 @@
       alarmSound.pause(); alarmSound.currentTime=0; isAlarmActive=false;
       alarmControls.style.display='none'; fixedAlarmControls.style.display='none';
       document.body.style.animation=''; playbackRetryCount=0;
+      // Restore file chooser buttons
+      document.querySelector('label[for="fileInput"]').style.display='';
+      if(isIOS) document.getElementById('safariPickerLabel').style.display='inline-block';
       if (savedPlaybackState&&savedPlaybackState.wasPlaying) {
         try {
           const elem = savedPlaybackState.isVideo?video:audio;
@@ -868,6 +873,9 @@
       if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
       if(currentRandomPause)currentRandomPause=null;
       alarmControls.style.display='block'; fixedAlarmControls.style.display='block';
+      // Hide file chooser buttons so alarm box doesn't overlap them
+      document.querySelector('label[for="fileInput"]').style.display='none';
+      document.getElementById('safariPickerLabel').style.display='none';
       // Use custom alarm sound if available, otherwise use generated beep
       if (customAlarmFiles.length > 0) {
         const pick = customAlarmFiles[Math.floor(Math.random()*customAlarmFiles.length)];
