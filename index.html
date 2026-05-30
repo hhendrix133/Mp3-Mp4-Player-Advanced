@@ -19,7 +19,9 @@
     .toggle-btn { background-color: #222; color: gold; border: 1px solid gold; padding: 5px 10px; }
     .toggle-btn.active { background-color: gold; color: black; }
     button:active, .file-chooser:active { opacity: 0.75; }
-    #clock { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: gold; letter-spacing: 1px; }
+    #clock { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: gold; letter-spacing: 1px; line-height: 1; }
+    #clockSec { font-size: 14px; font-weight: bold; color: gold; vertical-align: super; letter-spacing: 0.5px; margin-left: 1px; }
+    #clockAmpm { font-size: 28px; font-weight: bold; color: gold; }
     #playlist { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
       margin-top: 10px; border: 1px solid gold; padding: 10px; min-height: 60px; }
     .track-item { display: flex; justify-content: space-between; margin-bottom: 4px;
@@ -105,13 +107,14 @@
       padding: 6px 10px; font-size: 13px; flex: 1; outline: none; min-height: 34px; transition: border-color 0.2s; }
     #searchInput:focus { border-color: gold; border-width: 2px; }
     #searchInput::placeholder { color: rgba(255,215,0,0.3); }
-    #searchClear { background: #1a1a1a; color: rgba(255,215,0,0.7); border: 1px solid rgba(255,215,0,0.3);
+    #searchClear { background: #1a1a1a; color: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.15);
       border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 12px; white-space: nowrap;
-      display: none; line-height: 1; min-height: 34px; }
-    #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; }
+      display: inline-block; line-height: 1; min-height: 34px; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+    #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; border-color: rgba(255,215,0,0.4); }
+    #searchClear.has-query { color: rgba(255,215,0,0.85); border-color: rgba(255,215,0,0.45); }
     #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
     #compatHintInline { font-size: 11px; color: gold; opacity: 0.4; white-space: nowrap; letter-spacing: 0.4px;
-      transition: opacity 0.4s ease; pointer-events: none; padding-right: 4px; }
+      transition: opacity 0.4s ease; pointer-events: none; padding-left: 8px; margin-left: auto; }
     #compatHintInline.hidden { opacity: 0; }
     .track-item.search-hidden { display: none; }
     /* Fix: prevent long track names from pushing Remove button off-screen */
@@ -169,11 +172,14 @@
       margin-top: 8px; margin-bottom: 8px;
       width: 100%; box-sizing: border-box;
     }
+    /* Input fills space; X + count sit right after it; compat hint pushed to far right */
+    #searchInput { flex: 1; min-width: 0; }
+    #searchClear { flex-shrink: 0; }
+    #searchCount { flex-shrink: 0; min-width: 48px; text-align: right; }
     #mainLayout { margin-top: 0; }
     #mediaPanel { display: block; }
     #mediaCol { width: 100%; }
     @media (pointer: fine) and (min-width: 700px) {
-      #searchInput { flex: 1; min-width: 0; }
       /* Unified panel: playlist left 62%, divider, sliders right 38% */
       #mediaPanel {
         display: flex; align-items: stretch; gap: 0;
@@ -185,19 +191,18 @@
         display: flex; flex-direction: column;
       }
       #playlist {
-        height: 280px; max-height: 280px; min-height: 280px;
+        height: var(--playlist-height, 280px); max-height: var(--playlist-height, 280px); min-height: 280px;
         border: none; border-radius: 0; margin-top: 0;
         overflow-y: auto;
-        transition: height 0.25s ease, max-height 0.25s ease;
       }
       /* When visualizer is on, playlist grows by the canvas height so no black gap */
       #playlist.viz-expanded {
-        height: 392px; max-height: 392px;
+        height: calc(var(--playlist-height, 280px) + 112px); max-height: calc(var(--playlist-height, 280px) + 112px);
       }
       #controlsCol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
       #controlsCol .volume-controls {
         border: none; border-radius: 0; margin-top: 0;
-        flex: 1; display: flex; flex-direction: column; justify-content: center;
+        flex: 1; display: flex; flex-direction: column; justify-content: flex-start;
         padding: 16px 14px;
       }
       /* Sliders fill column, no min-width fighting */
@@ -244,7 +249,7 @@
   </style>
 </head>
 <body>
-  <div id="clock">00:00</div>
+  <div id="clock"><span id="clockMain"></span><span id="clockSec"></span><span id="clockAmpm"></span></div>
   <h1>Inflated Media Player</h1>
   <div id="alarmControls"><h2>ALARM ACTIVE</h2><button id="stopAlarmBtn">STOP ALARM</button></div>
   <div id="fixedAlarmControls"><h3 style="color:white;margin:0 0 10px 0;">ALARM</h3><button id="fixedStopAlarmBtn">STOP ALARM</button></div>
@@ -418,15 +423,70 @@
     let isMuted = false, preMuteVolume = 100;
 
     const videoWrapper = document.getElementById('videoWrapper');
+
+    // Dynamic playlist height: match media panel to the video's rendered height + button row
+    function adjustPlaylistToVideo() {
+      if (!window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) return;
+
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return; // no metadata yet
+
+      const aspectRatio = vh / vw;
+      const DEFAULT_H = 280;
+      const MIN_H = 280;
+      const MAX_H = 560;
+
+      // Get the rendered width of the video container column
+      const vcEl = document.getElementById('videoContainer');
+      const colWidth = vcEl ? vcEl.offsetWidth : 320;
+      const renderedVideoH = colWidth * aspectRatio;
+
+      // Measure the button row height directly from the actual buttons — never from the
+      // container, which is still the old video's height when loadedmetadata fires.
+      const pipBtn = document.getElementById('pipBtn');
+      const hideBtn = pipBtn ? pipBtn.nextElementSibling : null;
+      let buttonRowH = 50; // safe fallback
+      if (pipBtn) {
+        const btnH = pipBtn.offsetHeight || 38;
+        const btnMargin = parseInt(getComputedStyle(pipBtn).marginTop) || 8;
+        buttonRowH = btnH + btnMargin + 8; // button + top margin + a little padding
+      }
+
+      // Total = purely aspect-ratio-based video height + stable button row
+      const totalVideoBlockH = renderedVideoH + buttonRowH;
+
+      let newH;
+      if (renderedVideoH < DEFAULT_H * 0.85) {
+        newH = DEFAULT_H; // very short video — keep default
+      } else {
+        newH = Math.round(Math.min(MAX_H, Math.max(MIN_H, totalVideoBlockH)));
+      }
+
+      document.documentElement.style.setProperty('--playlist-height', newH + 'px');
+    }
+
     function setVideoActive(show) {
       videoContainer.style.display = show ? 'block' : 'none';
-      // Only apply side-by-side layout on pointer:fine (desktop/laptop) devices
       if (window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) {
         videoWrapper.classList.toggle('video-active', show);
+        if (!show) {
+          // Reset height when video hidden or audio track playing
+          document.documentElement.style.removeProperty('--playlist-height');
+        }
+        // When show=true, height is set by the loadedmetadata handler below
       } else {
         videoWrapper.classList.remove('video-active');
       }
     }
+
+    // Global loadedmetadata handler — fires every time a new video src loads.
+    // Always resets to default first, then measures the freshly-loaded video.
+    video.addEventListener('loadedmetadata', () => {
+      if (!window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) return;
+      if (videoContainer.style.display !== 'block') return;
+      // Snap directly to the correct height — no transition, no multi-frame dance
+      adjustPlaylistToVideo();
+    });
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     (function generateAlarmSound() {
@@ -476,7 +536,9 @@
       const now=new Date(); let h=now.getHours(); const ampm=h>=12?'PM':'AM'; h=h%12||12;
       const mm=now.getMinutes().toString().padStart(2,'0');
       const ss=now.getSeconds().toString().padStart(2,'0');
-      clockDisplay.textContent=`${h}:${mm}:${ss} ${ampm}`;
+      document.getElementById('clockMain').textContent=`${h}:${mm}`;
+      document.getElementById('clockSec').textContent=ss;
+      document.getElementById('clockAmpm').textContent=` ${ampm}`;
       checkAlarms();
     }
     setInterval(updateClock,1000); updateClock();
@@ -1065,7 +1127,7 @@
           item.classList.add('search-hidden');
         }
       });
-      searchClear.style.display = searchQuery ? 'inline-block' : 'none';
+      searchClear.classList.toggle('has-query', !!searchQuery);
       searchCount.textContent = searchQuery ? `${visible} / ${total}` : '';
     }
     searchInput.addEventListener('input', applySearch);
@@ -1126,6 +1188,27 @@
     audio.addEventListener('play',()=>connectToGraph(audio));
     video.addEventListener('play',()=>connectToGraph(video));
 
+    // Sync Play/Pause button when the user clicks the native video/audio controls
+    function onMediaPlay() {
+      if (isAlarmActive || currentRandomPause) return;
+      isPaused = false;
+      if (currentTrack) nowPlaying.textContent = currentTrack.name;
+      updatePlayPauseButton();
+    }
+    function onMediaPause() {
+      if (isAlarmActive || currentRandomPause) return;
+      // Ignore pause events that fire right at the natural end of a track
+      const elem = currentMediaElement || audio;
+      if (elem.duration && elem.currentTime >= elem.duration - 0.25) return;
+      isPaused = true;
+      if (currentTrack) nowPlaying.textContent = currentTrack.name + ' (Paused)';
+      updatePlayPauseButton();
+    }
+    audio.addEventListener('play', onMediaPlay);
+    audio.addEventListener('pause', onMediaPause);
+    video.addEventListener('play', onMediaPlay);
+    video.addEventListener('pause', onMediaPause);
+
     const vizCanvas=document.getElementById('visualizerCanvas');
     const vizCtx=vizCanvas.getContext('2d');
     function syncCanvasSize(){const w=vizCanvas.offsetWidth||600,h=vizCanvas.offsetHeight||90;if(vizCanvas.width!==w||vizCanvas.height!==h){vizCanvas.width=w;vizCanvas.height=h;}}
@@ -1134,6 +1217,7 @@
       // Re-evaluate video-active class on resize
       if (videoContainer.style.display === 'block') {
         setVideoActive(true);
+        adjustPlaylistToVideo();
       }
     });
     const freqBins=new Uint8Array(analyserNode.frequencyBinCount);
