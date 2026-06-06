@@ -19,9 +19,10 @@
     .toggle-btn { background-color: #222; color: gold; border: 1px solid gold; padding: 5px 10px; }
     .toggle-btn.active { background-color: gold; color: black; }
     button:active, .file-chooser:active { opacity: 0.75; }
-    #clock { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: gold; letter-spacing: 1px; line-height: 1; }
+    #clock { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: gold; letter-spacing: 1px; line-height: 1; text-align: center; }
     #clockSec { font-size: 14px; font-weight: bold; color: gold; vertical-align: super; letter-spacing: 0.5px; margin-left: 1px; }
     #clockAmpm { font-size: 28px; font-weight: bold; color: gold; }
+    #clockDate { display: block; font-size: 11px; color: rgba(255,215,0,0.65); letter-spacing: 0.4px; margin-top: 3px; text-align: center; font-weight: normal; }
     #playlist { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
       margin-top: 10px; border: 1px solid gold; padding: 10px; min-height: 60px; }
     .track-item { display: flex; justify-content: space-between; margin-bottom: 4px;
@@ -45,6 +46,7 @@
     .remove-btn:active, .remove-btn:hover { background: #ff4444; color: black; }
     .alarm { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
     .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
+    .alarm-countdown { font-size: 11px; color: rgba(255,215,0,0.55); margin-top: 4px; letter-spacing: 0.3px; }
     .day-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
     .volume-controls { border: 1px solid gold; padding: 10px; border-radius: 4px; margin-top: 10px; }
     #progressContainer { width: 100%; background: rgba(255,215,0,0.12); border: 1px solid gold;
@@ -113,12 +115,39 @@
     #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; border-color: rgba(255,215,0,0.4); }
     #searchClear.has-query { color: rgba(255,215,0,0.85); border-color: rgba(255,215,0,0.45); }
     #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
+    #playlistStats {
+      display: none;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,215,0,0.05);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: rgba(255,215,0,0.7);
+      flex-shrink: 0;
+    }
+    #playlistStats .ps-item { display: flex; flex-direction: column; align-items: center; padding: 0 6px; border-right: 1px solid rgba(255,215,0,0.15); }
+    #playlistStats .ps-item:last-child { border-right: none; }
+    #playlistStats .ps-label { font-size: 9px; color: rgba(255,215,0,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
+    #playlistStats .ps-val { font-size: 12px; color: gold; font-weight: bold; }
+    #playlistStats .ps-loading { color: rgba(255,215,0,0.3); font-style: italic; font-size: 10px; }
     #compatHintInline { font-size: 11px; color: gold; opacity: 0.4; white-space: nowrap; letter-spacing: 0.4px;
       transition: opacity 0.4s ease; pointer-events: none; padding-left: 8px; margin-left: auto; }
     #compatHintInline.hidden { opacity: 0; }
     .track-item.search-hidden { display: none; }
     /* Fix: prevent long track names from pushing Remove button off-screen */
     .track-left { min-width: 0; }
+    /* Track thumbnail */
+    .track-thumb {
+      height: 36px; width: auto; min-width: 36px; max-width: 80px;
+      border-radius: 4px; flex-shrink: 0;
+      border: 1px solid rgba(255,215,0,0.25); background: #111;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; margin-right: 4px;
+    }
+    .track-thumb img { height: 36px; width: auto; max-width: 80px; display: block; }
+    .track-thumb-icon { font-size: 18px; line-height: 1; padding: 0 8px; }
     /* Empty playlist message */
     .playlist-empty {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -235,6 +264,8 @@
     @media (max-width: 480px) {
       body { margin: 10px 10px 80px; }
       #clock { font-size: 11px; top: 14px; right: 10px; }
+      #clockDate { font-size: 9px; }
+      #playlistStats { display: none !important; }
       #controls { gap: 4px; }
       #playlist { max-height: 220px; padding: 6px; }
       .slider-col { flex: 1 1 140px; }
@@ -247,9 +278,10 @@
       body { padding-bottom: env(safe-area-inset-bottom, 16px); }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
 <body>
-  <div id="clock"><span id="clockMain"></span><span id="clockSec"></span><span id="clockAmpm"></span></div>
+  <div id="clock"><span id="clockMain"></span><span id="clockSec"></span><span id="clockAmpm"></span><span id="clockDate"></span></div>
   <h1>Inflated Media Player</h1>
   <div id="alarmControls"><h2>ALARM ACTIVE</h2><button id="stopAlarmBtn">STOP ALARM</button></div>
   <div id="fixedAlarmControls"><h3 style="color:white;margin:0 0 10px 0;">ALARM</h3><button id="fixedStopAlarmBtn">STOP ALARM</button></div>
@@ -281,6 +313,12 @@
     <button id="searchClear">✕</button>
     <span id="searchCount"></span>
     <span id="compatHintInline">Compatible With Mp3 &amp; Mp4</span>
+    <div id="playlistStats">
+      <span id="psLoading" class="ps-loading">—</span>
+      <span class="ps-item" id="psTracksWrap" style="display:none"><span class="ps-label">Tracks</span><span class="ps-val" id="psTracks">—</span></span>
+      <span class="ps-item" id="psDurWrap"    style="display:none"><span class="ps-label">Duration</span><span class="ps-val" id="psDur">—</span></span>
+      <span class="ps-item" id="psStoreWrap"  style="display:none"><span class="ps-label">Storage</span><span class="ps-val" id="psStore">—</span></span>
+    </div>
   </div>
   <div id="videoWrapper">
   <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
@@ -539,7 +577,11 @@
       document.getElementById('clockMain').textContent=`${h}:${mm}`;
       document.getElementById('clockSec').textContent=ss;
       document.getElementById('clockAmpm').textContent=` ${ampm}`;
+      const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('clockDate').textContent=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
       checkAlarms();
+      updateAlarmCountdowns();
     }
     setInterval(updateClock,1000); updateClock();
 
@@ -601,6 +643,56 @@
         elem.onerror=()=>{URL.revokeObjectURL(elem.src);resolve({duration:'--:--',artist:'Unknown Artist'});};
         setTimeout(()=>{URL.revokeObjectURL(elem.src);resolve({duration:'--:--',artist:'Unknown Artist'});},3000);
       });
+    }
+
+    // Generate a thumbnail data-URL for a media file.
+    // MP4: grab a video frame; MP3: extract ID3 cover art via jsmediatags.
+    const thumbCache = {};
+    function generateThumb(file) {
+      if (thumbCache[file.name] !== undefined) return Promise.resolve(thumbCache[file.name]);
+      const isVid = file.name.toLowerCase().endsWith('.mp4');
+      if (isVid) {
+        return new Promise((resolve) => {
+          const url = URL.createObjectURL(file);
+          const v = document.createElement('video');
+          v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = url;
+          v.onloadeddata = () => { v.currentTime = Math.min(0.5, (v.duration * 0.1) || 0.5); };
+          v.onseeked = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = v.videoWidth || 160; canvas.height = v.videoHeight || 90;
+              canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+              thumbCache[file.name] = canvas.toDataURL('image/jpeg', 0.75);
+            } catch(e) { thumbCache[file.name] = null; }
+            URL.revokeObjectURL(url); resolve(thumbCache[file.name]);
+          };
+          v.onerror = () => { thumbCache[file.name] = null; URL.revokeObjectURL(url); resolve(null); };
+          setTimeout(() => { if (thumbCache[file.name] === undefined) { thumbCache[file.name] = null; URL.revokeObjectURL(url); resolve(null); } }, 5000);
+        });
+      } else {
+        // MP3: try to extract ID3 cover art
+        return new Promise((resolve) => {
+          if (typeof jsmediatags === 'undefined') { thumbCache[file.name] = null; resolve(null); return; }
+          try {
+            jsmediatags.read(file, {
+              onSuccess: (tag) => {
+                const pic = tag.tags && tag.tags.picture;
+                if (pic && pic.data) {
+                  try {
+                    const bytes = new Uint8Array(pic.data);
+                    const blob = new Blob([bytes], { type: pic.format || 'image/jpeg' });
+                    const url = URL.createObjectURL(blob);
+                    thumbCache[file.name] = url; // store object URL directly
+                    resolve(url);
+                  } catch(e) { thumbCache[file.name] = null; resolve(null); }
+                } else { thumbCache[file.name] = null; resolve(null); }
+              },
+              onError: () => { thumbCache[file.name] = null; resolve(null); }
+            });
+          } catch(e) { thumbCache[file.name] = null; resolve(null); }
+          setTimeout(() => { if (thumbCache[file.name] === undefined) { thumbCache[file.name] = null; resolve(null); } }, 5000);
+        });
+      }
     }
 
     function detectFolder(file) {
@@ -688,6 +780,7 @@
           playlist.splice(index,1);
           if (currentTrackIndex>=index&&currentTrackIndex>0) currentTrackIndex--;
           updatePlaylistDisplay();
+          scheduleStats();
         };
         trackItem.addEventListener('click',(e)=>{if(e.target.closest('.remove-btn'))return;playSpecificTrack(index);});
         trackItem.addEventListener('dragstart',(e)=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',index);trackItem.classList.add('dragging');});
@@ -698,7 +791,23 @@
           const from=parseInt(e.dataTransfer.getData('text/plain')),to=parseInt(trackItem.dataset.index);
           if(from!==to){const item=playlist.splice(from,1)[0];playlist.splice(to,0,item);if(currentTrack)currentTrackIndex=playlist.findIndex(f=>f.name===currentTrack.name);updatePlaylistDisplay();}
         });
-        trackItem.appendChild(left); trackItem.appendChild(removeBtn);
+        // Thumbnail: shown to the left of the Remove button
+        const thumbWrap = document.createElement('div');
+        thumbWrap.className = 'track-thumb';
+        const isVidFile = file.name.toLowerCase().endsWith('.mp4');
+        const fallbackIcon = isVidFile ? '🎬' : '🎵';
+        if (thumbCache[file.name]) {
+          const img = document.createElement('img'); img.src = thumbCache[file.name]; thumbWrap.appendChild(img);
+        } else {
+          thumbWrap.innerHTML = `<span class="track-thumb-icon">${fallbackIcon}</span>`;
+          generateThumb(file).then(dataUrl => {
+            if (dataUrl) {
+              thumbWrap.innerHTML = '';
+              const img = document.createElement('img'); img.src = dataUrl; thumbWrap.appendChild(img);
+            }
+          });
+        }
+        trackItem.appendChild(left); trackItem.appendChild(thumbWrap); trackItem.appendChild(removeBtn);
         playlistDiv.appendChild(trackItem);
       }
       // Re-apply any active search query after playlist re-renders
@@ -772,6 +881,7 @@
       Array.from(input.files||[]).forEach(addFileToPlaylist);
       shuffleArray();
       await updatePlaylistDisplay();
+      scheduleStats();
       input.value='';
     }
     fileInput.addEventListener('change', ()=>handleFileInputChange(fileInput));
@@ -1071,6 +1181,100 @@
       document.body.style.animation='alarm-flash 1s infinite'; updatePlayPauseButton();
       alarmTimeout=setTimeout(()=>{if(isAlarmActive)stopAlarm();},900000);
     }
+
+    // ── Alarm countdown ───────────────────────────────────────────────────────
+    function updateAlarmCountdowns() {
+      const now = new Date();
+      alarmSettings.forEach(({index}) => {
+        const ti = document.getElementById(`alarmTime${index}`); if (!ti) return;
+        const cont = ti.closest('.alarm-item'); if (!cont) return;
+        let cdEl = cont.querySelector('.alarm-countdown');
+        if (!cdEl) {
+          cdEl = document.createElement('div');
+          cdEl.className = 'alarm-countdown';
+          ti.after(cdEl);
+        }
+        if (!ti.value) { cdEl.textContent = ''; return; }
+        const [ah, am] = ti.value.split(':').map(Number);
+        const checkedDays = Array.from(cont.querySelectorAll('.day-check'))
+          .filter(c => c.checked).map(c => parseInt(c.value));
+        if (!checkedDays.length) { cdEl.textContent = 'No days selected'; return; }
+        const nowTotalSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+        const alarmTotalSec = ah*3600 + am*60;
+        let minSecs = Infinity;
+        for (let d = 0; d < 7; d++) {
+          if (!checkedDays.includes((now.getDay()+d) % 7)) continue;
+          let diff = d*86400 + alarmTotalSec - nowTotalSec;
+          if (diff <= 0 && d === 0) diff += 86400;
+          if (diff > 0 && diff < minSecs) minSecs = diff;
+        }
+        if (minSecs === Infinity) { cdEl.textContent = ''; return; }
+        const h = Math.floor(minSecs / 3600);
+        const m = Math.floor((minSecs % 3600) / 60);
+        const s = minSecs % 60;
+        const parts = [];
+        if (h > 0) parts.push(`${h}h`);
+        if (m > 0 || h > 0) parts.push(`${m}m`);
+        parts.push(`${s}s`);
+        cdEl.textContent = `fires in ${parts.join(' ')}`;
+      });
+    }
+
+    // ── Playlist Stats ────────────────────────────────────────────────────────
+    function formatBytes(b) {
+      if (!b) return '—';
+      if (b >= 1073741824) return (b/1073741824).toFixed(2)+' GB';
+      if (b >= 1048576)    return (b/1048576).toFixed(1)+' MB';
+      return Math.round(b/1024)+' KB';
+    }
+    let _statsTimeout = null, _statsRunning = false;
+    function scheduleStats() {
+      clearTimeout(_statsTimeout);
+      const statsEl = document.getElementById('playlistStats');
+      if (statsEl) statsEl.style.display = playlist.length ? 'flex' : 'none';
+      const ld = document.getElementById('psLoading');
+      if (ld) { ld.style.display=''; ld.textContent='Calculating…'; }
+      ['psTracksWrap','psDurWrap','psStoreWrap'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.style.display = 'none';
+      });
+      _statsTimeout = setTimeout(runStats, 8000);
+    }
+    async function runStats() {
+      if (_statsRunning) return;
+      _statsRunning = true;
+      const count = playlist.length;
+      const statsEl = document.getElementById('playlistStats');
+      if (!count) {
+        if (statsEl) statsEl.style.display = 'none';
+        _statsRunning = false; return;
+      }
+      let totalBytes = 0;
+      playlist.forEach(f => { totalBytes += (f.size || 0); });
+      let totalSecs = 0;
+      for (let i = 0; i < playlist.length; i++) {
+        if (!playlist[i].metadata) playlist[i].metadata = await loadMetadata(playlist[i]);
+        const dur = playlist[i].metadata.duration;
+        if (dur && dur !== '--:--') {
+          const [mm, ss] = dur.split(':').map(Number);
+          totalSecs += mm*60 + (ss||0);
+        }
+        if (i % 4 === 0) await new Promise(r => setTimeout(r, 60));
+      }
+      const h = Math.floor(totalSecs/3600);
+      const m = Math.floor((totalSecs%3600)/60);
+      const durStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+      const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+      set('psTracks', count);
+      set('psDur', durStr);
+      set('psStore', formatBytes(totalBytes));
+      const ld = document.getElementById('psLoading'); if (ld) ld.style.display = 'none';
+      ['psTracksWrap','psDurWrap','psStoreWrap'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.style.display = '';
+      });
+      if (statsEl) statsEl.style.display = 'flex';
+      _statsRunning = false;
+    }
+
     function addAlarm(){
       if(alarmSettings.length>=3){alert("Maximum of 3 alarms allowed");return;}
       const index = alarmIdCounter++;
