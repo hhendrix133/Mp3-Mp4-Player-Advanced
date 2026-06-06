@@ -277,6 +277,28 @@
     @supports (-webkit-touch-callout: none) {
       body { padding-bottom: env(safe-area-inset-bottom, 16px); }
     }
+    /* ── Folder Memory UI ── */
+    #folderMemoryBar {
+      display: none; /* shown only when File System Access API is supported */
+      align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap;
+    }
+    #rememberFolderBtn {
+      background: #1a1a00; color: gold; border: 1px solid gold;
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;
+      cursor: pointer; white-space: nowrap;
+    }
+    #rememberFolderBtn:hover { background: rgba(255,215,0,0.15); }
+    #rememberFolderBtn.remembered { background: #0a2200; color: #4dff4d; border-color: #4dff4d; }
+    #folderMemoryStatus {
+      font-size: 11px; color: rgba(255,215,0,0.55); letter-spacing: 0.3px;
+    }
+    #forgetFolderBtn {
+      display: none;
+      background: #1a0000; color: #ff6666; border: 1px solid #ff4444;
+      padding: 4px 9px; border-radius: 5px; font-size: 11px; font-weight: bold;
+      cursor: pointer;
+    }
+    #forgetFolderBtn:hover { background: #ff4444; color: black; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
@@ -289,6 +311,11 @@
   <input type="file" id="fileInput" multiple accept=".mp3,.mp4" webkitdirectory directory />
   <label class="file-chooser" for="fileInputSafari" id="safariPickerLabel" style="display:none;">Add Files</label>
   <input type="file" id="fileInputSafari" multiple accept=".mp3,.mp4" />
+  <div id="folderMemoryBar">
+    <button id="rememberFolderBtn">📁 Remember Folder</button>
+    <button id="forgetFolderBtn">✕ Forget</button>
+    <span id="folderMemoryStatus"></span>
+  </div>
   <div id="status" style="margin-top:8px;">Current status: <span id="nowPlaying">None</span> | <span id="timer">00:00</span> | Volume: <span id="volumeDisplay">100%</span></div>
 
   <div id="controls">
@@ -1472,6 +1499,210 @@
       const hintEl = document.getElementById('compatHintInline');
       if (hintEl && playlist.length === 0) hintEl.classList.add('hidden');
     }, 10000);
+
+    // ── File System Access API — Folder Memory ────────────────────────────────
+    // Uses IndexedDB to persist the directory handle across sessions.
+    // Only activates on browsers that support showDirectoryPicker (Chrome/Edge).
+    (function initFolderMemory() {
+      if (!('showDirectoryPicker' in window)) return; // Safari/Firefox fallback — just hide
+      const bar        = document.getElementById('folderMemoryBar');
+      const btn        = document.getElementById('rememberFolderBtn');
+      const forgetBtn  = document.getElementById('forgetFolderBtn');
+      const statusEl   = document.getElementById('folderMemoryStatus');
+      bar.style.display = 'flex';
+
+      const DB_NAME    = 'IMPFolderDB';
+      const DB_VERSION = 1;
+      const STORE      = 'handles';
+      const KEY        = 'musicFolder';
+
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+      async function saveHandle(handle) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).put(handle, KEY);
+          tx.oncomplete = resolve;
+          tx.onerror = e => reject(e.target.error);
+        });
+      }
+      async function loadHandle() {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, 'readonly');
+          const req = tx.objectStore(STORE).get(KEY);
+          req.onsuccess = e => resolve(e.target.result || null);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+      async function deleteHandle() {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).delete(KEY);
+          tx.oncomplete = resolve;
+          tx.onerror = e => reject(e.target.error);
+        });
+      }
+
+      // Recursively collect all .mp3/.mp4 files from a directory handle
+      async function collectFiles(dirHandle, collected) {
+        for await (const [name, entry] of dirHandle.entries()) {
+          if (entry.kind === 'file') {
+            const lower = name.toLowerCase();
+            if (lower.endsWith('.mp3') || lower.endsWith('.mp4')) {
+              try {
+                const file = await entry.getFile();
+                // Mimic webkitRelativePath so folder detection still works
+                Object.defineProperty(file, 'webkitRelativePath', {
+                  value: dirHandle.name + '/' + name,
+                  writable: false
+                });
+                collected.push(file);
+              } catch(e) { /* skip unreadable files */ }
+            }
+          } else if (entry.kind === 'directory') {
+            await collectFilesDeep(entry, dirHandle.name, collected);
+          }
+        }
+      }
+      async function collectFilesDeep(dirHandle, parentPath, collected) {
+        const myPath = parentPath + '/' + dirHandle.name;
+        for await (const [name, entry] of dirHandle.entries()) {
+          if (entry.kind === 'file') {
+            const lower = name.toLowerCase();
+            if (lower.endsWith('.mp3') || lower.endsWith('.mp4')) {
+              try {
+                const file = await entry.getFile();
+                Object.defineProperty(file, 'webkitRelativePath', {
+                  value: myPath + '/' + name,
+                  writable: false
+                });
+                collected.push(file);
+              } catch(e) {}
+            }
+          } else if (entry.kind === 'directory') {
+            await collectFilesDeep(entry, myPath, collected);
+          }
+        }
+      }
+
+      async function loadFromHandle(handle) {
+        statusEl.textContent = 'Loading folder…';
+        btn.textContent = '⏳ Loading…';
+        btn.disabled = true;
+        try {
+          const files = [];
+          await collectFiles(handle, files);
+          if (!files.length) {
+            statusEl.textContent = 'No MP3/MP4 files found in that folder.';
+            btn.textContent = '📁 Remember Folder';
+            btn.disabled = false;
+            return;
+          }
+          // Clear playlist and reload
+          playlist.length = 0;
+          customAlarmFiles.length = 0;
+          currentTrack = null; currentTrackIndex = -1; currentMediaElement = null;
+          stopAllMedia();
+          for (const k in urlCache) { try { URL.revokeObjectURL(urlCache[k]); } catch(e) {} }
+          Object.keys(urlCache).forEach(k => delete urlCache[k]);
+          files.forEach(addFileToPlaylist);
+          shuffleArray();
+          await updatePlaylistDisplay();
+          scheduleStats();
+          const folderName = handle.name;
+          statusEl.textContent = `✅ ${folderName} — ${playlist.length} tracks loaded`;
+          btn.textContent = '🔄 Reload Folder';
+          btn.classList.add('remembered');
+          btn.disabled = false;
+          forgetBtn.style.display = 'inline-block';
+        } catch(e) {
+          statusEl.textContent = 'Could not read folder. Try clicking Remember Folder again.';
+          btn.textContent = '📁 Remember Folder';
+          btn.classList.remove('remembered');
+          btn.disabled = false;
+          console.warn('Folder load error:', e);
+        }
+      }
+
+      // On page load — try to restore the saved handle
+      async function tryAutoRestore() {
+        try {
+          const handle = await loadHandle();
+          if (!handle) return; // nothing saved yet
+          // Check if we still have permission without prompting
+          const perm = await handle.queryPermission({ mode: 'read' });
+          if (perm === 'granted') {
+            statusEl.textContent = 'Restoring saved folder…';
+            forgetBtn.style.display = 'inline-block';
+            await loadFromHandle(handle);
+          } else {
+            // Permission needs re-granting — show a prompt button instead of auto-requesting
+            btn.textContent = '🔓 Reload Saved Folder';
+            btn.classList.add('remembered');
+            forgetBtn.style.display = 'inline-block';
+            statusEl.textContent = 'Click to reload your saved folder (permission needed)';
+            // Store handle reference so the button click can use it
+            btn._pendingHandle = handle;
+          }
+        } catch(e) {
+          // IndexedDB might be blocked (private mode etc.) — fail silently
+          console.warn('Auto-restore failed:', e);
+        }
+      }
+
+      btn.addEventListener('click', async () => {
+        // If there's a pending handle that just needs permission, use it
+        if (btn._pendingHandle) {
+          const handle = btn._pendingHandle;
+          btn._pendingHandle = null;
+          try {
+            const perm = await handle.requestPermission({ mode: 'read' });
+            if (perm === 'granted') {
+              await loadFromHandle(handle);
+            } else {
+              statusEl.textContent = 'Permission denied — pick folder manually below.';
+            }
+          } catch(e) {
+            statusEl.textContent = 'Permission error. Try using Choose Files / Folders instead.';
+          }
+          return;
+        }
+        // Normal flow — open the folder picker
+        try {
+          const handle = await window.showDirectoryPicker({ mode: 'read' });
+          await saveHandle(handle);
+          btn._pendingHandle = null;
+          await loadFromHandle(handle);
+        } catch(e) {
+          if (e.name !== 'AbortError') {
+            statusEl.textContent = 'Could not open folder picker.';
+            console.warn('showDirectoryPicker error:', e);
+          }
+        }
+      });
+
+      forgetBtn.addEventListener('click', async () => {
+        await deleteHandle();
+        btn.textContent = '📁 Remember Folder';
+        btn.classList.remove('remembered');
+        btn._pendingHandle = null;
+        forgetBtn.style.display = 'none';
+        statusEl.textContent = 'Folder forgotten.';
+      });
+
+      // Kick off auto-restore after a short delay so the player UI renders first
+      setTimeout(tryAutoRestore, 300);
+    })();
+
   });
 </script>
 </body>
