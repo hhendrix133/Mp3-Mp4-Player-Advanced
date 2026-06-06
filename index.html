@@ -618,9 +618,13 @@
       alarmSound.pause(); alarmSound.currentTime=0; isAlarmActive=false;
       alarmControls.style.display='none'; fixedAlarmControls.style.display='none';
       document.body.style.animation=''; playbackRetryCount=0;
-      // Restore file chooser buttons
-      document.querySelector('label[for="fileInput"]').style.display='';
-      if(isIOS) document.getElementById('safariPickerLabel').style.display='inline-block';
+      // Restore file chooser buttons — but only if folder memory hasn't hidden them
+      const _remBtn = document.getElementById('rememberFolderBtn');
+      const _folderActive = _remBtn && _remBtn.classList.contains('remembered');
+      if (!_folderActive) {
+        document.querySelector('label[for="fileInput"]').style.display='';
+        if(isIOS) document.getElementById('safariPickerLabel').style.display='inline-block';
+      }
       if (savedPlaybackState&&savedPlaybackState.wasPlaying) {
         try {
           const elem = savedPlaybackState.isVideo?video:audio;
@@ -1511,6 +1515,15 @@
       const statusEl   = document.getElementById('folderMemoryStatus');
       bar.style.display = 'flex';
 
+      const chooseLabel   = document.querySelector('label[for="fileInput"]');
+      const safariLabel   = document.getElementById('safariPickerLabel');
+
+      function setManualPickerVisible(visible) {
+        if (chooseLabel) chooseLabel.style.display = visible ? '' : 'none';
+        // Only show safariLabel if on iOS AND visible requested
+        if (safariLabel) safariLabel.style.display = (visible && isIOS) ? 'inline-block' : 'none';
+      }
+
       const DB_NAME    = 'IMPFolderDB';
       const DB_VERSION = 1;
       const STORE      = 'handles';
@@ -1624,11 +1637,13 @@
           btn.classList.add('remembered');
           btn.disabled = false;
           forgetBtn.style.display = 'inline-block';
+          setManualPickerVisible(false);
         } catch(e) {
           statusEl.textContent = 'Could not read folder. Try clicking Remember Folder again.';
           btn.textContent = '📁 Remember Folder';
           btn.classList.remove('remembered');
           btn.disabled = false;
+          setManualPickerVisible(true);
           console.warn('Folder load error:', e);
         }
       }
@@ -1643,12 +1658,14 @@
           if (perm === 'granted') {
             statusEl.textContent = 'Restoring saved folder…';
             forgetBtn.style.display = 'inline-block';
+            setManualPickerVisible(false);
             await loadFromHandle(handle);
           } else {
             // Permission needs re-granting — show a prompt button instead of auto-requesting
             btn.textContent = '🔓 Reload Saved Folder';
             btn.classList.add('remembered');
             forgetBtn.style.display = 'inline-block';
+            setManualPickerVisible(false);
             statusEl.textContent = 'Click to reload your saved folder (permission needed)';
             // Store handle reference so the button click can use it
             btn._pendingHandle = handle;
@@ -1697,6 +1714,7 @@
         btn._pendingHandle = null;
         forgetBtn.style.display = 'none';
         statusEl.textContent = 'Folder forgotten.';
+        setManualPickerVisible(true);
       });
 
       // Kick off auto-restore after a short delay so the player UI renders first
