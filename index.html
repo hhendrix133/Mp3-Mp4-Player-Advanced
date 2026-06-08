@@ -44,7 +44,8 @@
       border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;
       transition: background 0.15s; touch-action: manipulation; }
     .remove-btn:active, .remove-btn:hover { background: #ff4444; color: black; }
-    .alarm { border: 1px solid gold; padding: 10px; margin-top: 10px; border-radius: 4px; }
+    /* Alarm inline box (inside bottom panel) */
+    .alarm { border: 1px solid gold; padding: 10px; border-radius: 4px; }
     .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
     .alarm-countdown { font-size: 11px; color: rgba(255,215,0,0.55); margin-top: 4px; letter-spacing: 0.3px; }
     .day-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
@@ -56,6 +57,7 @@
     #progressThumb { position: absolute; left: 0; top: 50%; transform: translate(-50%, -50%);
       width: 14px; height: 14px; border-radius: 50%; background: black;
       border: 3px solid gold; box-sizing: border-box; pointer-events: none; }
+    /* Full-screen alarm overlay (fires on top of everything) */
     #fixedAlarmControls { position: fixed; bottom: 0; left: 0; right: 0; background-color: red;
       padding: 15px; text-align: center; display: none; z-index: 999; box-shadow: 0 -4px 8px rgba(0,0,0,0.5);
       padding-bottom: max(15px, env(safe-area-inset-bottom)); }
@@ -116,16 +118,9 @@
     #searchClear.has-query { color: rgba(255,215,0,0.85); border-color: rgba(255,215,0,0.45); }
     #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
     #playlistStats {
-      display: none;
-      align-items: center;
-      gap: 0;
-      background: rgba(255,215,0,0.05);
-      border: 1px solid rgba(255,215,0,0.25);
-      border-radius: 6px;
-      padding: 3px 10px;
-      font-size: 11px;
-      color: rgba(255,215,0,0.7);
-      flex-shrink: 0;
+      display: none; align-items: center; gap: 0;
+      background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 6px; padding: 3px 10px; font-size: 11px; color: rgba(255,215,0,0.7); flex-shrink: 0;
     }
     #playlistStats .ps-item { display: flex; flex-direction: column; align-items: center; padding: 0 6px; border-right: 1px solid rgba(255,215,0,0.15); }
     #playlistStats .ps-item:last-child { border-right: none; }
@@ -136,72 +131,37 @@
       transition: opacity 0.4s ease; pointer-events: none; padding-left: 8px; margin-left: auto; }
     #compatHintInline.hidden { opacity: 0; }
     .track-item.search-hidden { display: none; }
-    /* Fix: prevent long track names from pushing Remove button off-screen */
     .track-left { min-width: 0; }
-    /* Track thumbnail */
-    .track-thumb {
-      height: 36px; width: auto; min-width: 36px; max-width: 80px;
-      border-radius: 4px; flex-shrink: 0;
-      border: 1px solid rgba(255,215,0,0.25); background: #111;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden; margin-right: 4px;
-    }
+    .track-thumb { height: 36px; width: auto; min-width: 36px; max-width: 80px;
+      border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,215,0,0.25); background: #111;
+      display: flex; align-items: center; justify-content: center; overflow: hidden; margin-right: 4px; }
     .track-thumb img { height: 36px; width: auto; max-width: 80px; display: block; }
     .track-thumb-icon { font-size: 18px; line-height: 1; padding: 0 8px; }
-    /* Empty playlist message */
-    .playlist-empty {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    .playlist-empty { display: flex; flex-direction: column; align-items: center; justify-content: center;
       height: 100%; min-height: 200px; gap: 10px;
       color: rgba(255,215,0,0.35); text-align: center; padding: 20px;
-      pointer-events: none; user-select: none;
-    }
+      pointer-events: none; user-select: none; }
     .playlist-empty-icon { font-size: 48px; opacity: 0.5; }
     .playlist-empty-title { font-size: 15px; font-weight: bold; letter-spacing: 1px; color: rgba(255,215,0,0.5); }
     .playlist-empty-sub { font-size: 12px; color: rgba(255,215,0,0.3); line-height: 1.6; }
+
     /* ── Desktop: side-by-side layout when video is playing ── */
     @media (pointer: fine) and (min-width: 700px) {
       #videoWrapper { display: block; }
       #videoWrapper.video-active {
-        display: flex;
-        flex-direction: row;
-        gap: 14px;
-        align-items: stretch;   /* both columns same height */
-        margin-top: 10px;
+        display: flex; flex-direction: row; gap: 14px; align-items: stretch; margin-top: 10px;
       }
-      /* Video column: wider + stretches to fill the full height of the right panel */
       #videoWrapper.video-active #videoContainer {
-        flex: 0 0 clamp(320px, 34%, 480px);
-        max-width: 480px;
-        margin-top: 0;
-        display: flex;
-        flex-direction: column;
+        flex: 0 0 clamp(320px, 34%, 480px); max-width: 480px; margin-top: 0;
+        display: flex; flex-direction: column;
       }
-      /* Video element fills all the vertical space above the PIP/Hide buttons */
-      #videoWrapper.video-active #videoPlayer {
-        flex: 1;
-        min-height: 0;
-        width: 100%;
-        object-fit: contain;
-      }
-      #videoWrapper.video-active #mainLayout {
-        flex: 1 1 0;
-        min-width: 0;
-        margin-top: 0;
-      }
-      /* Tighten track-name column while video is active so names truncate
-         and the Remove button never gets squeezed off-screen */
-      #videoWrapper.video-active #mediaCol {
-        flex: 0 0 55% !important;
-      }
+      #videoWrapper.video-active #videoPlayer { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+      #videoWrapper.video-active #mainLayout { flex: 1 1 0; min-width: 0; margin-top: 0; }
+      #videoWrapper.video-active #mediaCol { flex: 0 0 55% !important; }
     }
-    /* ── Desktop two-pane layout (pointer:fine + ≥700px) ── */
-    /* Search bar is now full-page-width, sitting above the video+panel area */
-    #searchBar {
-      display: flex; align-items: center; gap: 6px;
-      margin-top: 8px; margin-bottom: 8px;
-      width: 100%; box-sizing: border-box;
-    }
-    /* Input fills space; X + count sit right after it; compat hint pushed to far right */
+
+    /* ── Desktop two-pane layout ── */
+    #searchBar { display: flex; align-items: center; gap: 6px; margin-top: 8px; margin-bottom: 8px; width: 100%; }
     #searchInput { flex: 1; min-width: 0; }
     #searchClear { flex-shrink: 0; }
     #searchCount { flex-shrink: 0; min-width: 48px; text-align: right; }
@@ -209,32 +169,14 @@
     #mediaPanel { display: block; }
     #mediaCol { width: 100%; }
     @media (pointer: fine) and (min-width: 700px) {
-      /* Unified panel: playlist left 62%, divider, sliders right 38% */
-      #mediaPanel {
-        display: flex; align-items: stretch; gap: 0;
-        border: 1px solid gold; border-radius: 4px; overflow: hidden;
-      }
-      #mediaCol {
-        flex: 0 0 62%; min-width: 0;
-        border-right: 1px solid rgba(255,215,0,0.3);
-        display: flex; flex-direction: column;
-      }
-      #playlist {
-        height: var(--playlist-height, 280px); max-height: var(--playlist-height, 280px); min-height: 280px;
-        border: none; border-radius: 0; margin-top: 0;
-        overflow-y: auto;
-      }
-      /* When visualizer is on, playlist grows by the canvas height so no black gap */
-      #playlist.viz-expanded {
-        height: calc(var(--playlist-height, 280px) + 112px); max-height: calc(var(--playlist-height, 280px) + 112px);
-      }
+      #mediaPanel { display: flex; align-items: stretch; gap: 0; border: 1px solid gold; border-radius: 4px; overflow: hidden; }
+      #mediaCol { flex: 0 0 62%; min-width: 0; border-right: 1px solid rgba(255,215,0,0.3); display: flex; flex-direction: column; }
+      #playlist { height: var(--playlist-height, 280px); max-height: var(--playlist-height, 280px); min-height: 280px;
+        border: none; border-radius: 0; margin-top: 0; overflow-y: auto; }
+      #playlist.viz-expanded { height: calc(var(--playlist-height, 280px) + 112px); max-height: calc(var(--playlist-height, 280px) + 112px); }
       #controlsCol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
-      #controlsCol .volume-controls {
-        border: none; border-radius: 0; margin-top: 0;
-        flex: 1; display: flex; flex-direction: column; justify-content: flex-start;
-        padding: 16px 14px;
-      }
-      /* Sliders fill column, no min-width fighting */
+      #controlsCol .volume-controls { border: none; border-radius: 0; margin-top: 0;
+        flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding: 16px 14px; }
       .slider-col { min-width: 0 !important; width: 100%; }
       .slider-row input[type="range"] { flex: 1; width: 100%; min-width: 0; }
       .slider-grid { flex-direction: column; gap: 18px; flex-wrap: nowrap; }
@@ -242,8 +184,9 @@
       #controlsCol label { font-size: 12px; }
       #controlsCol h3 { font-size: 13px; margin: 0 0 14px; }
     }
-    /* Previous button — desktop/laptop only */
+
     @media (pointer: coarse) { #prevBtn { display: none !important; } }
+
     #subfoldersPanel { display: none; margin-top: 14px; border: 1px solid rgba(255,215,0,0.4);
       border-radius: 8px; padding: 16px 18px; background: #0d0d0d; }
     #subfoldersPanel h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
@@ -251,16 +194,17 @@
     #subfoldersPanel p { margin: 0 0 14px; font-size: 12px; color: rgba(255,215,0,0.6); line-height: 1.5; }
     .folder-tree { font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.9;
       background: #111; border: 1px solid rgba(255,215,0,0.15); border-radius: 6px; padding: 14px 16px; overflow-x: auto; }
-    .ft-root  { color: #FFD700; font-weight: bold; }
-    .ft-good  { color: #FFD700; }
-    .ft-best  { color: #4dff4d; }
-    .ft-line  { color: rgba(255,215,0,0.25); }
-    .ft-dim   { color: rgba(255,215,0,0.4); font-size: 11px; }
+    .ft-root { color: #FFD700; font-weight: bold; }
+    .ft-good { color: #FFD700; }
+    .ft-best { color: #4dff4d; }
+    .ft-line { color: rgba(255,215,0,0.25); }
+    .ft-dim  { color: rgba(255,215,0,0.4); font-size: 11px; }
     .ft-badge { display: inline-block; font-size: 9px; font-weight: bold; padding: 1px 5px;
       border-radius: 8px; margin-left: 6px; vertical-align: middle; }
     .ft-badge.good { background: #3a2e00; color: #FFD700; border: 1px solid #FFD700; }
     .ft-badge.best { background: #1a5c1a; color: #4dff4d; border: 1px solid #4dff4d; }
     #status { margin-top: 8px; }
+
     @media (max-width: 480px) {
       body { margin: 10px 10px 80px; }
       #clock { font-size: 11px; top: 14px; right: 10px; }
@@ -273,32 +217,112 @@
       #subfoldersPanel { padding: 12px; }
       .folder-tree { font-size: 11px; padding: 10px 12px; }
       #videoContainer { max-width: 100%; }
+      #bottomPanel { flex-direction: column !important; }
+      #alarmCol, #lyricsCol { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,215,0,0.2); }
     }
     @supports (-webkit-touch-callout: none) {
       body { padding-bottom: env(safe-area-inset-bottom, 16px); }
     }
+
     /* ── Folder Memory UI ── */
-    #folderMemoryBar {
-      display: none; /* shown only when File System Access API is supported */
-      align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap;
-    }
-    #rememberFolderBtn {
-      background: #1a1a00; color: gold; border: 1px solid gold;
+    #folderMemoryBar { display: none; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    #rememberFolderBtn { background: #1a1a00; color: gold; border: 1px solid gold;
       padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;
-      cursor: pointer; white-space: nowrap;
-    }
+      cursor: pointer; white-space: nowrap; }
     #rememberFolderBtn:hover { background: rgba(255,215,0,0.15); }
     #rememberFolderBtn.remembered { background: #0a2200; color: #4dff4d; border-color: #4dff4d; }
-    #folderMemoryStatus {
-      font-size: 11px; color: rgba(255,215,0,0.55); letter-spacing: 0.3px;
-    }
-    #forgetFolderBtn {
-      display: none;
-      background: #1a0000; color: #ff6666; border: 1px solid #ff4444;
-      padding: 4px 9px; border-radius: 5px; font-size: 11px; font-weight: bold;
-      cursor: pointer;
-    }
+    #folderMemoryStatus { font-size: 11px; color: rgba(255,215,0,0.55); letter-spacing: 0.3px; }
+    #forgetFolderBtn { display: none; background: #1a0000; color: #ff6666; border: 1px solid #ff4444;
+      padding: 4px 9px; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; }
     #forgetFolderBtn:hover { background: #ff4444; color: black; }
+
+    /* ── Bottom Two-Column Panel: Alarm (left) + Lyrics (right) ── */
+    #bottomPanel {
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+      margin-top: 14px;
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 220px;
+    }
+    #alarmCol {
+      flex: 0 0 42%;
+      min-width: 0;
+      border-right: 1px solid rgba(255,215,0,0.2);
+      padding: 14px 16px;
+      background: #050505;
+      display: flex;
+      flex-direction: column;
+    }
+    #alarmCol h3 { margin: 0 0 10px; font-size: 13px; color: rgba(255,215,0,0.7);
+      letter-spacing: 1px; }
+    #lyricsCol {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 14px 16px;
+      background: #030303;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Lyrics panel inside lyricsCol */
+    #lyricsHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    #lyricsHeader h3 { margin: 0; font-size: 13px; color: rgba(255,215,0,0.6);
+      letter-spacing: 2px; text-transform: uppercase; font-weight: normal; }
+    #lyricsHeaderBtns { display: flex; gap: 6px; align-items: center; }
+    .lyrics-ctrl-btn {
+      background: #111; color: rgba(255,215,0,0.45);
+      border: 1px solid rgba(255,215,0,0.2); border-radius: 5px;
+      padding: 3px 8px; font-size: 11px; cursor: pointer; font-weight: bold;
+      white-space: nowrap;
+    }
+    .lyrics-ctrl-btn:hover { border-color: gold; color: gold; }
+    .lyrics-ctrl-btn.wrong { background: #1a0000; color: #ff6666; border-color: #ff4444; }
+    .lyrics-ctrl-btn.wrong:hover { background: #ff4444; color: black; }
+
+    #lyricsBody { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* Context lines (prev/next shown dimmer) */
+    #lyricsContext { display: flex; flex-direction: column; gap: 2px; flex: 1; overflow: hidden; }
+    .lyrics-ctx-line {
+      font-size: 13px; color: rgba(255,215,0,0.28); text-align: center;
+      line-height: 1.45; padding: 1px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lyrics-ctx-line.active {
+      font-size: clamp(14px, 1.8vw, 17px); color: gold; font-weight: bold;
+      white-space: normal; overflow: visible; text-overflow: unset;
+    }
+    .lyrics-ctx-line.near { color: rgba(255,215,0,0.55); }
+
+    /* Full lyrics view (toggled) */
+    #lyricsFullView {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      background: #060606;
+      border: 1px solid rgba(255,215,0,0.15);
+      border-radius: 5px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: rgba(255,215,0,0.7);
+      white-space: pre-wrap;
+      margin-top: 6px;
+    }
+
+    #lyricsStatus {
+      font-size: 10px; color: rgba(255,215,0,0.28);
+      text-align: center; margin-top: 6px; letter-spacing: 0.3px;
+    }
+    #lyricsNoTs {
+      display: none;
+      font-size: 10px; color: rgba(255,100,0,0.55);
+      text-align: center; margin-top: 4px; letter-spacing: 0.2px;
+    }
+    .lyrics-empty { color: rgba(255,215,0,0.18); font-size: 12px; text-align: center;
+      padding: 18px 0; font-style: italic; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
@@ -307,6 +331,7 @@
   <h1>Inflated Media Player</h1>
   <div id="alarmControls"><h2>ALARM ACTIVE</h2><button id="stopAlarmBtn">STOP ALARM</button></div>
   <div id="fixedAlarmControls"><h3 style="color:white;margin:0 0 10px 0;">ALARM</h3><button id="fixedStopAlarmBtn">STOP ALARM</button></div>
+
   <label class="file-chooser" for="fileInput">Choose Files / Folders</label>
   <input type="file" id="fileInput" multiple accept=".mp3,.mp4" webkitdirectory directory />
   <label class="file-chooser" for="fileInputSafari" id="safariPickerLabel" style="display:none;">Add Files</label>
@@ -347,74 +372,106 @@
       <span class="ps-item" id="psStoreWrap"  style="display:none"><span class="ps-label">Storage</span><span class="ps-val" id="psStore">—</span></span>
     </div>
   </div>
+
   <div id="videoWrapper">
-  <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
-  <div id="mainLayout">
-    <div id="mediaPanel">
-      <div id="mediaCol">
-        <div id="playlist"></div>
-      </div>
-      <div id="controlsCol">
-        <div class="volume-controls">
-          <div id="vizWrapper">
-            <div class="viz-label">Audio Visualizer</div>
-            <canvas id="visualizerCanvas" width="600" height="90"></canvas>
-          </div>
-          <h3 style="margin:8px 0 14px;">Volume Control &amp; Playback Speed</h3>
-          <div class="slider-grid">
-            <div class="slider-col">
-              <label>Volume</label>
-              <div class="slider-row"><input type="range" id="volumeSlider" min="0" max="100" value="100"><span class="slider-val" id="manualVolumeDisplay">100%</span></div>
+    <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
+    <div id="mainLayout">
+      <div id="mediaPanel">
+        <div id="mediaCol">
+          <div id="playlist"></div>
+        </div>
+        <div id="controlsCol">
+          <div class="volume-controls">
+            <div id="vizWrapper">
+              <div class="viz-label">Audio Visualizer</div>
+              <canvas id="visualizerCanvas" width="600" height="90"></canvas>
             </div>
-            <div class="slider-col">
-              <label>Speed</label>
-              <div class="slider-row"><input type="range" id="speedSlider" min="25" max="200" value="100" step="25"><span class="slider-val" id="speedDisplay">1.00x</span></div>
-            </div>
-            <div class="slider-col">
-              <label>Frequency</label>
-              <div class="slider-row"><input type="range" id="frequencySlider" min="0" max="100" value="50"><span class="slider-val" id="frequencyDisplay">Flat</span></div>
-            </div>
-            <div class="slider-col">
-              <label>Pitch</label>
-              <div class="slider-row"><input type="range" id="pitchSlider" min="-12" max="12" value="0" step="1"><span class="slider-val" id="pitchDisplay">0 st</span></div>
+            <h3 style="margin:8px 0 14px;">Volume Control &amp; Playback Speed</h3>
+            <div class="slider-grid">
+              <div class="slider-col">
+                <label>Volume</label>
+                <div class="slider-row"><input type="range" id="volumeSlider" min="0" max="100" value="100"><span class="slider-val" id="manualVolumeDisplay">100%</span></div>
+              </div>
+              <div class="slider-col">
+                <label>Speed</label>
+                <div class="slider-row"><input type="range" id="speedSlider" min="25" max="200" value="100" step="25"><span class="slider-val" id="speedDisplay">1.00x</span></div>
+              </div>
+              <div class="slider-col">
+                <label>Frequency</label>
+                <div class="slider-row"><input type="range" id="frequencySlider" min="0" max="100" value="50"><span class="slider-val" id="frequencyDisplay">Flat</span></div>
+              </div>
+              <div class="slider-col">
+                <label>Pitch</label>
+                <div class="slider-row"><input type="range" id="pitchSlider" min="-12" max="12" value="0" step="1"><span class="slider-val" id="pitchDisplay">0 st</span></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div><!-- /#mainLayout -->
+    </div><!-- /#mainLayout -->
   </div><!-- /#videoWrapper -->
 
-  <div class="alarm"><h3>Alarm Settings</h3><div id="alarms"></div><button id="addAlarmBtn">Add Alarm</button></div>
+  <!-- ── Bottom Panel: Alarm LEFT, Lyrics RIGHT ── -->
+  <div id="bottomPanel">
+    <!-- LEFT: Alarm Settings -->
+    <div id="alarmCol">
+      <h3>🔔 Alarm Settings</h3>
+      <div id="alarms"></div>
+      <button id="addAlarmBtn" style="margin-top:8px;">Add Alarm</button>
+    </div>
+
+    <!-- RIGHT: Lyrics -->
+    <div id="lyricsCol">
+      <div id="lyricsHeader">
+        <h3>🎤 Lyrics</h3>
+        <div id="lyricsHeaderBtns">
+          <button class="lyrics-ctrl-btn" id="lyricsViewAllBtn">View All</button>
+          <button class="lyrics-ctrl-btn wrong" id="lyricsWrongBtn">✗ Wrong</button>
+        </div>
+      </div>
+      <div id="lyricsBody">
+        <div id="lyricsContext">
+          <div class="lyrics-ctx-line" id="lyricsCtx0"></div>
+          <div class="lyrics-ctx-line" id="lyricsCtx1"></div>
+          <div class="lyrics-ctx-line active" id="lyricsCtxActive">No song playing</div>
+          <div class="lyrics-ctx-line" id="lyricsCtx2"></div>
+          <div class="lyrics-ctx-line" id="lyricsCtx3"></div>
+        </div>
+        <div id="lyricsFullView"></div>
+        <div id="lyricsNoTs">⚠ No timestamps — evenly distributed</div>
+        <div id="lyricsStatus">Load your music folder — lyrics load automatically from the Lyrics subfolder.</div>
+      </div>
+    </div>
+  </div><!-- /#bottomPanel -->
 
   <div id="subfoldersPanel">
     <h4>📁 Folder Structure Reference</h4>
-    <p>Arrange your files in this exact layout to unlock the <strong>Best Tracks</strong> and <strong>Good Tracks</strong> filter buttons. The folder names must match — special characters like <code style="color:gold;">@</code> and <code style="color:gold;">&amp;</code> are handled automatically.</p>
+    <p>Arrange your files in this exact layout to unlock the <strong>Best Tracks</strong> and <strong>Good Tracks</strong> filter buttons.</p>
     <div class="folder-tree">
-      <div><span class="ft-root">📁 MusicAmp3z&amp;4</span> &nbsp;<span class="ft-dim">← root folder — upload this</span></div>
+      <div><span class="ft-root">📁 Music@mp3z&amp;4</span> &nbsp;<span class="ft-dim">← root folder — upload this</span></div>
       <div><span class="ft-line">│</span></div>
-      <div><span class="ft-line">├──</span> <span class="ft-good">📁 Music@mp3z</span> &nbsp;<span class="ft-badge good">GOOD</span>&nbsp; <span class="ft-dim">Good tracks go here</span></div>
-      <div><span class="ft-line">│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="ft-dim">song.mp3, another.mp3 …</span></div>
+      <div><span class="ft-line">├──</span> <span class="ft-good">📁 Music@mp3z</span> &nbsp;<span class="ft-badge good">GOOD</span>&nbsp; <span class="ft-dim">Good tracks</span></div>
       <div><span class="ft-line">│</span></div>
-      <div><span class="ft-line">└──</span> <span class="ft-best">📁 The Best of The Best Mp3z</span> &nbsp;<span class="ft-badge best">BEST</span>&nbsp; <span class="ft-dim">Best tracks go here</span></div>
-      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">favourite.mp3, banger.mp4 …</span></div>
+      <div><span class="ft-line">├──</span> <span class="ft-best">📁 The Best of The Best Mp3z</span> &nbsp;<span class="ft-badge best">BEST</span>&nbsp; <span class="ft-dim">Best tracks</span></div>
+      <div><span class="ft-line">│</span></div>
+      <div><span class="ft-line">└──</span> <span class="ft-root">📁 Lyrics</span> &nbsp;<span class="ft-dim">← lyrics folder</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-line">├──</span> <span class="ft-dim">📁 Best &nbsp;(Song Name.txt …)</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-line">└──</span> <span class="ft-dim">📁 Good &nbsp;(Song Name.txt …)</span></div>
     </div>
     <p style="margin:10px 0 0; font-size:11px; color:rgba(255,215,0,0.4);">
-      ⚠️ Drag-and-drop folder upload requires a Chromium-based browser (Chrome, Edge). Safari on iOS supports adding individual files only — subfolder detection will not work on iOS.
+      ⚠️ Drag-and-drop folder upload requires Chrome/Edge. Safari on iOS supports individual files only.
     </p>
-
     <h4 style="margin-top:18px;">⌨️ Keyboard Shortcuts <span style="font-size:10px;color:rgba(255,215,0,0.35);font-weight:normal;">(desktop only)</span></h4>
     <div class="folder-tree" style="line-height:2;">
       <div><span style="color:gold;font-weight:bold;">Space</span> &nbsp;&nbsp;&nbsp;<span class="ft-dim">Play / Pause</span></div>
       <div><span style="color:gold;font-weight:bold;">← →</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Seek -5s / +5s</span></div>
-      <div><span style="color:gold;font-weight:bold;">N</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Skip to next track</span></div>
-      <div><span style="color:gold;font-weight:bold;">P</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Previous track</span></div>
+      <div><span style="color:gold;font-weight:bold;">N</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Skip</span></div>
+      <div><span style="color:gold;font-weight:bold;">P</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Previous</span></div>
       <div><span style="color:gold;font-weight:bold;">M</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Mute / Unmute</span></div>
-      <div><span style="color:gold;font-weight:bold;">↑ ↓</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume +5% / -5%</span></div>
+      <div><span style="color:gold;font-weight:bold;">↑ ↓</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume ±5%</span></div>
     </div>
-
     <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
-    <p>Name any <code style="color:gold;">.mp3</code> or <code style="color:gold;">.mp4</code> file <strong>Add_Alarm</strong> and upload it with your music. The player pulls it out of the playlist automatically — it will never appear in the track list. It can live in any subfolder (Best, Good, or root). Upload multiple alarm files and the player picks one at random each time an alarm fires. Numbered variants your OS creates are all recognised automatically: <code style="color:gold;">Add_Alarm.mp3</code>, <code style="color:gold;">Add_Alarm(1).mp3</code>, <code style="color:gold;">Add_Alarm(2).mp3</code>, <code style="color:gold;">Add_Alarm - Copy.mp3</code> — all work.</p>
+    <p>Name any .mp3/.mp4 file <strong>Add_Alarm</strong> and upload it with your music. Multiple variants work: Add_Alarm.mp3, Add_Alarm(1).mp3, etc.</p>
     <div id="customAlarmInfo" style="margin-top:8px;font-size:12px;color:rgba(255,215,0,0.65);"></div>
   </div>
 
@@ -448,7 +505,6 @@
     const goodTracksBtn      = document.getElementById('goodTracksBtn');
     const subfoldersPanel    = document.getElementById('subfoldersPanel');
     const addAlarmBtn        = document.getElementById('addAlarmBtn');
-    const clockDisplay       = document.getElementById('clock');
     const volumeSlider       = document.getElementById('volumeSlider');
     const manualVolumeDisplay= document.getElementById('manualVolumeDisplay');
     const speedSlider        = document.getElementById('speedSlider');
@@ -463,6 +519,7 @@
     const progress           = document.getElementById('progress');
     const progressThumb      = document.getElementById('progressThumb');
     const vizWrapper         = document.getElementById('vizWrapper');
+    const videoWrapper       = document.getElementById('videoWrapper');
 
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -472,8 +529,6 @@
       document.getElementById('safariPickerLabel').style.display='inline-block';
     }
 
-    // FIX: currentTrackIndex starts at -1 so findNextFilteredIndex(-1) correctly
-    // resolves to index 0 (the first track in the list) on first Play press.
     let playlist = [], currentTrackIndex = -1, currentTrack = null, currentMediaElement = null;
     let trackEndTimeout = null, timerInterval = null, pauseInterval = null, isPaused = false;
     let alarmSettings = [], alarmTimeout = null, alarmIdCounter = 0;
@@ -484,49 +539,28 @@
     let isAlarmActive = false, savedPlaybackState = null, lastAlarmTime = null;
     let urlCache = {}, playbackRetryCount = 0, isVideoHidden = false;
     let pitchSemitones = 0;
-    let customAlarmFiles = []; // files named Add_Alarm — never go into playlist
+    let customAlarmFiles = [];
     let isMuted = false, preMuteVolume = 100;
 
-    const videoWrapper = document.getElementById('videoWrapper');
-
-    // Dynamic playlist height: match media panel to the video's rendered height + button row
     function adjustPlaylistToVideo() {
       if (!window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) return;
-
       const vw = video.videoWidth, vh = video.videoHeight;
-      if (!vw || !vh) return; // no metadata yet
-
+      if (!vw || !vh) return;
       const aspectRatio = vh / vw;
-      const DEFAULT_H = 280;
-      const MIN_H = 280;
-      const MAX_H = 560;
-
-      // Get the rendered width of the video container column
+      const DEFAULT_H = 280, MIN_H = 280, MAX_H = 560;
       const vcEl = document.getElementById('videoContainer');
       const colWidth = vcEl ? vcEl.offsetWidth : 320;
       const renderedVideoH = colWidth * aspectRatio;
-
-      // Measure the button row height directly from the actual buttons — never from the
-      // container, which is still the old video's height when loadedmetadata fires.
-      const pipBtn = document.getElementById('pipBtn');
-      const hideBtn = pipBtn ? pipBtn.nextElementSibling : null;
-      let buttonRowH = 50; // safe fallback
-      if (pipBtn) {
-        const btnH = pipBtn.offsetHeight || 38;
-        const btnMargin = parseInt(getComputedStyle(pipBtn).marginTop) || 8;
-        buttonRowH = btnH + btnMargin + 8; // button + top margin + a little padding
+      const pipBtnEl = document.getElementById('pipBtn');
+      let buttonRowH = 50;
+      if (pipBtnEl) {
+        const btnH = pipBtnEl.offsetHeight || 38;
+        const btnMargin = parseInt(getComputedStyle(pipBtnEl).marginTop) || 8;
+        buttonRowH = btnH + btnMargin + 8;
       }
-
-      // Total = purely aspect-ratio-based video height + stable button row
       const totalVideoBlockH = renderedVideoH + buttonRowH;
-
-      let newH;
-      if (renderedVideoH < DEFAULT_H * 0.85) {
-        newH = DEFAULT_H; // very short video — keep default
-      } else {
-        newH = Math.round(Math.min(MAX_H, Math.max(MIN_H, totalVideoBlockH)));
-      }
-
+      let newH = renderedVideoH < DEFAULT_H * 0.85 ? DEFAULT_H :
+        Math.round(Math.min(MAX_H, Math.max(MIN_H, totalVideoBlockH)));
       document.documentElement.style.setProperty('--playlist-height', newH + 'px');
     }
 
@@ -534,22 +568,15 @@
       videoContainer.style.display = show ? 'block' : 'none';
       if (window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) {
         videoWrapper.classList.toggle('video-active', show);
-        if (!show) {
-          // Reset height when video hidden or audio track playing
-          document.documentElement.style.removeProperty('--playlist-height');
-        }
-        // When show=true, height is set by the loadedmetadata handler below
+        if (!show) document.documentElement.style.removeProperty('--playlist-height');
       } else {
         videoWrapper.classList.remove('video-active');
       }
     }
 
-    // Global loadedmetadata handler — fires every time a new video src loads.
-    // Always resets to default first, then measures the freshly-loaded video.
     video.addEventListener('loadedmetadata', () => {
       if (!window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) return;
       if (videoContainer.style.display !== 'block') return;
-      // Snap directly to the correct height — no transition, no multi-frame dance
       adjustPlaylistToVideo();
     });
 
@@ -558,13 +585,13 @@
       const sr = audioContext.sampleRate, buf = audioContext.createBuffer(1, sr, sr);
       const d = buf.getChannelData(0);
       for (let i = 0; i < buf.length; i++) { const t = i/sr; d[i] = Math.sin(2*Math.PI*((Math.floor(t*4)%2===0)?800:1000)*t)*0.8; }
-      const bl = 2, ba = bl * 1, dl = d.length * bl, ab = new ArrayBuffer(44+dl), v = new DataView(ab);
+      const bl=2,ba=bl*1,dl=d.length*bl,ab=new ArrayBuffer(44+dl),v=new DataView(ab);
       const ws=(vw,o,s)=>{for(let i=0;i<s.length;i++)vw.setUint8(o+i,s.charCodeAt(i));};
       ws(v,0,'RIFF');v.setUint32(4,36+dl,true);ws(v,8,'WAVE');ws(v,12,'fmt ');v.setUint32(16,16,true);
       v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*ba,true);
       v.setUint16(32,ba,true);v.setUint16(34,16,true);ws(v,36,'data');v.setUint32(40,dl,true);
-      let off=44; for(let i=0;i<d.length;i++){const s=Math.max(-1,Math.min(1,d[i]));v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2;}
-      alarmSound.src = URL.createObjectURL(new Blob([ab],{type:'audio/wav'}));
+      let off=44;for(let i=0;i<d.length;i++){const s=Math.max(-1,Math.min(1,d[i]));v.setInt16(off,s<0?s*0x8000:s*0x7FFF,true);off+=2;}
+      alarmSound.src=URL.createObjectURL(new Blob([ab],{type:'audio/wav'}));
     })();
 
     const hideVideoBtn = document.createElement('button');
@@ -607,8 +634,7 @@
       const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
       document.getElementById('clockDate').textContent=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
-      checkAlarms();
-      updateAlarmCountdowns();
+      checkAlarms(); updateAlarmCountdowns();
     }
     setInterval(updateClock,1000); updateClock();
 
@@ -618,7 +644,6 @@
       alarmSound.pause(); alarmSound.currentTime=0; isAlarmActive=false;
       alarmControls.style.display='none'; fixedAlarmControls.style.display='none';
       document.body.style.animation=''; playbackRetryCount=0;
-      // Restore file chooser buttons — but only if folder memory hasn't hidden them
       const _remBtn = document.getElementById('rememberFolderBtn');
       const _folderActive = _remBtn && _remBtn.classList.contains('remembered');
       if (!_folderActive) {
@@ -636,16 +661,15 @@
           videoContainer.style.display=savedPlaybackState.isVideo?'block':'none';
           setVideoActive(savedPlaybackState.isVideo);
           currentMediaElement=elem; currentTrack={name:savedPlaybackState.trackName};
-          // BUG FIX: restore currentTrackIndex so subsequent skip/prev work correctly
           const restoredIdx = playlist.findIndex(f=>f.name===savedPlaybackState.trackName);
           if (restoredIdx !== -1) currentTrackIndex = restoredIdx;
-          isPaused=true;
-          updatePlayPauseButton();
+          isPaused=true; updatePlayPauseButton();
           setTimeout(()=>{
             elem.play().then(()=>{
               isPaused=false;
               nowPlaying.textContent=savedPlaybackState.trackName;
               updateTimer(); updatePlayPauseButton();
+              if(window._lyricsOnTrackStart) window._lyricsOnTrackStart(savedPlaybackState.trackName);
             }).catch(()=>{nowPlaying.textContent="Ready to play"; updatePlayPauseButton();});
           },500);
         } catch(e){nowPlaying.textContent="Ready to play"; isPaused=true;}
@@ -676,8 +700,6 @@
       });
     }
 
-    // Generate a thumbnail data-URL for a media file.
-    // MP4: grab a video frame; MP3: extract ID3 cover art via jsmediatags.
     const thumbCache = {};
     function generateThumb(file) {
       if (thumbCache[file.name] !== undefined) return Promise.resolve(thumbCache[file.name]);
@@ -686,7 +708,7 @@
         return new Promise((resolve) => {
           const url = URL.createObjectURL(file);
           const v = document.createElement('video');
-          v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = url;
+          v.preload='metadata'; v.muted=true; v.playsInline=true; v.src=url;
           v.onloadeddata = () => { v.currentTime = Math.min(0.5, (v.duration * 0.1) || 0.5); };
           v.onseeked = () => {
             try {
@@ -697,13 +719,12 @@
             } catch(e) { thumbCache[file.name] = null; }
             URL.revokeObjectURL(url); resolve(thumbCache[file.name]);
           };
-          v.onerror = () => { thumbCache[file.name] = null; URL.revokeObjectURL(url); resolve(null); };
-          setTimeout(() => { if (thumbCache[file.name] === undefined) { thumbCache[file.name] = null; URL.revokeObjectURL(url); resolve(null); } }, 5000);
+          v.onerror = () => { thumbCache[file.name]=null; URL.revokeObjectURL(url); resolve(null); };
+          setTimeout(()=>{ if(thumbCache[file.name]===undefined){thumbCache[file.name]=null;URL.revokeObjectURL(url);resolve(null);} },5000);
         });
       } else {
-        // MP3: try to extract ID3 cover art
         return new Promise((resolve) => {
-          if (typeof jsmediatags === 'undefined') { thumbCache[file.name] = null; resolve(null); return; }
+          if (typeof jsmediatags === 'undefined') { thumbCache[file.name]=null; resolve(null); return; }
           try {
             jsmediatags.read(file, {
               onSuccess: (tag) => {
@@ -713,28 +734,24 @@
                     const bytes = new Uint8Array(pic.data);
                     const blob = new Blob([bytes], { type: pic.format || 'image/jpeg' });
                     const url = URL.createObjectURL(blob);
-                    thumbCache[file.name] = url; // store object URL directly
-                    resolve(url);
-                  } catch(e) { thumbCache[file.name] = null; resolve(null); }
-                } else { thumbCache[file.name] = null; resolve(null); }
+                    thumbCache[file.name] = url; resolve(url);
+                  } catch(e) { thumbCache[file.name]=null; resolve(null); }
+                } else { thumbCache[file.name]=null; resolve(null); }
               },
-              onError: () => { thumbCache[file.name] = null; resolve(null); }
+              onError: () => { thumbCache[file.name]=null; resolve(null); }
             });
-          } catch(e) { thumbCache[file.name] = null; resolve(null); }
-          setTimeout(() => { if (thumbCache[file.name] === undefined) { thumbCache[file.name] = null; resolve(null); } }, 5000);
+          } catch(e) { thumbCache[file.name]=null; resolve(null); }
+          setTimeout(()=>{ if(thumbCache[file.name]===undefined){thumbCache[file.name]=null;resolve(null);} },5000);
         });
       }
     }
 
     function detectFolder(file) {
-      const rp = (file.webkitRelativePath||'').toLowerCase()
-        .replace(/\s+/g,'')
-        .replace(/@/g,'a')
-        .replace(/&/g,'and');
+      const rp = (file.webkitRelativePath||'').toLowerCase().replace(/\s+/g,'').replace(/@/g,'a').replace(/&/g,'and');
       if (rp.includes('thebestofthebest') || rp.includes('bestofthebest')) return 'best';
       const parts = (file.webkitRelativePath||'').split('/');
       if (parts.length >= 3) {
-        const parent = parts[parts.length - 2].toLowerCase().replace(/\s+/g,'').replace(/@/g,'a').replace(/&/g,'and');
+        const parent = parts[parts.length-2].toLowerCase().replace(/\s+/g,'').replace(/@/g,'a').replace(/&/g,'and');
         if (parent.includes('musicamp3z') || parent.includes('musicamp3')) return 'good';
       }
       return 'other';
@@ -745,48 +762,38 @@
       return file._folder === filterMode;
     }
     function findFirstFilteredIndex() {
-      for (let i=0; i<playlist.length; i++) {
-        if (trackMatchesFilter(playlist[i])) return i;
-      }
+      for (let i=0;i<playlist.length;i++) { if(trackMatchesFilter(playlist[i])) return i; }
       return -1;
     }
     function findNextFilteredIndex(afterIndex) {
       if (!playlist.length) return -1;
-      for (let i=1; i<=playlist.length; i++) {
-        const idx = (afterIndex+i) % playlist.length;
-        if (trackMatchesFilter(playlist[idx])) return idx;
+      for (let i=1;i<=playlist.length;i++) {
+        const idx=(afterIndex+i)%playlist.length;
+        if(trackMatchesFilter(playlist[idx])) return idx;
       }
       return -1;
     }
     function findPrevFilteredIndex(beforeIndex) {
       if (!playlist.length) return -1;
-      for (let i=1; i<=playlist.length; i++) {
-        const idx = ((beforeIndex-i) % playlist.length + playlist.length) % playlist.length;
-        if (trackMatchesFilter(playlist[idx])) return idx;
+      for (let i=1;i<=playlist.length;i++) {
+        const idx=((beforeIndex-i)%playlist.length+playlist.length)%playlist.length;
+        if(trackMatchesFilter(playlist[idx])) return idx;
       }
       return -1;
     }
 
     async function updatePlaylistDisplay() {
       playlistDiv.innerHTML='';
-      // Hide the inline compat hint instantly once files are loaded
       const hintEl = document.getElementById('compatHintInline');
-      if (playlist.length > 0 && hintEl && !hintEl.classList.contains('hidden')) {
-        hintEl.classList.add('hidden');
-      }
+      if (playlist.length>0 && hintEl && !hintEl.classList.contains('hidden')) hintEl.classList.add('hidden');
       if(playlist.length===0){
-        playlistDiv.innerHTML = `
-          <div class="playlist-empty">
-            <div class="playlist-empty-icon">🎵</div>
-            <div class="playlist-empty-title">No media loaded</div>
-            <div class="playlist-empty-sub">Click <strong style="color:rgba(255,215,0,0.6);">Choose Files / Folders</strong> above<br>to upload your MP3s and MP4s</div>
-          </div>`;
+        playlistDiv.innerHTML=`<div class="playlist-empty"><div class="playlist-empty-icon">🎵</div><div class="playlist-empty-title">No media loaded</div><div class="playlist-empty-sub">Click <strong style="color:rgba(255,215,0,0.6);">Choose Files / Folders</strong> above<br>to upload your MP3s and MP4s</div></div>`;
         return;
       }
-      for (let index=0; index<playlist.length; index++) {
-        const file = playlist[index];
-        if (!file.metadata) file.metadata = await loadMetadata(file);
-        const trackItem = document.createElement('div');
+      for (let index=0;index<playlist.length;index++) {
+        const file=playlist[index];
+        if (!file.metadata) file.metadata=await loadMetadata(file);
+        const trackItem=document.createElement('div');
         trackItem.className='track-item'; trackItem.draggable=true; trackItem.dataset.index=index;
         if (currentTrack&&currentTrack.name===file.name) trackItem.classList.add('playing');
         if (!trackMatchesFilter(file)) trackItem.classList.add('filtered-out');
@@ -798,105 +805,71 @@
         const ti=document.createElement('div'); ti.className='track-info';
         const ns=document.createElement('div'); ns.className='track-name';
         let badge='';
-        if (filterMode==='best' && file._folder==='best') badge='<span class="folder-badge best">BEST</span>';
-        else if (filterMode==='good' && file._folder==='good') badge='<span class="folder-badge good">GOOD</span>';
-        ns.innerHTML=file.name+badge; ti.appendChild(ns);
-        const ms=document.createElement('div'); ms.className='track-meta';
-        ms.textContent=`${file.metadata.artist} • ${file.metadata.duration}`; ti.appendChild(ms);
-        left.appendChild(ti);
-        const removeBtn=document.createElement('button'); removeBtn.textContent='Remove'; removeBtn.className='remove-btn';
-        removeBtn.onclick=(e)=>{
-          e.stopPropagation();
-          if (urlCache[file.name]){try{URL.revokeObjectURL(urlCache[file.name]);}catch(ex){}delete urlCache[file.name];}
-          playlist.splice(index,1);
-          if (currentTrackIndex>=index&&currentTrackIndex>0) currentTrackIndex--;
-          updatePlaylistDisplay();
-          scheduleStats();
-        };
-        trackItem.addEventListener('click',(e)=>{if(e.target.closest('.remove-btn'))return;playSpecificTrack(index);});
-        trackItem.addEventListener('dragstart',(e)=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',index);trackItem.classList.add('dragging');});
-        trackItem.addEventListener('dragend',()=>trackItem.classList.remove('dragging'));
-        trackItem.addEventListener('dragover',(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
-        trackItem.addEventListener('drop',(e)=>{
-          e.preventDefault();
-          const from=parseInt(e.dataTransfer.getData('text/plain')),to=parseInt(trackItem.dataset.index);
-          if(from!==to){const item=playlist.splice(from,1)[0];playlist.splice(to,0,item);if(currentTrack)currentTrackIndex=playlist.findIndex(f=>f.name===currentTrack.name);updatePlaylistDisplay();}
-        });
-        // Thumbnail: shown to the left of the Remove button
-        const thumbWrap = document.createElement('div');
-        thumbWrap.className = 'track-thumb';
-        const isVidFile = file.name.toLowerCase().endsWith('.mp4');
-        const fallbackIcon = isVidFile ? '🎬' : '🎵';
-        if (thumbCache[file.name]) {
-          const img = document.createElement('img'); img.src = thumbCache[file.name]; thumbWrap.appendChild(img);
-        } else {
-          thumbWrap.innerHTML = `<span class="track-thumb-icon">${fallbackIcon}</span>`;
-          generateThumb(file).then(dataUrl => {
-            if (dataUrl) {
-              thumbWrap.innerHTML = '';
-              const img = document.createElement('img'); img.src = dataUrl; thumbWrap.appendChild(img);
-            }
-          });
-        }
-        trackItem.appendChild(left); trackItem.appendChild(thumbWrap); trackItem.appendChild(removeBtn);
+        if (file._folder==='best') badge='<span class="folder-badge best">BEST</span>';
+        else if (file._folder==='good') badge='<span class="folder-badge good">GOOD</span>';
+        ns.innerHTML=file.name+badge;
+        const mt=document.createElement('div'); mt.className='track-meta';
+        mt.textContent=(file.metadata.artist!=='Unknown Artist'?file.metadata.artist+' • ':'')+file.metadata.duration;
+        ti.appendChild(ns); ti.appendChild(mt);
+        const thumbDiv=document.createElement('div'); thumbDiv.className='track-thumb';
+        const thumbIcon=document.createElement('span'); thumbIcon.className='track-thumb-icon';
+        thumbIcon.textContent=file.name.toLowerCase().endsWith('.mp4')?'🎬':'🎵';
+        thumbDiv.appendChild(thumbIcon); left.appendChild(thumbDiv); left.appendChild(ti);
+        const removeBtn=document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.textContent='Remove';
+        removeBtn.addEventListener('click',(e)=>{e.stopPropagation();playlist.splice(index,1);if(currentTrackIndex>=index&&currentTrackIndex>0)currentTrackIndex--;updatePlaylistDisplay();scheduleStats();});
+        trackItem.appendChild(left); trackItem.appendChild(removeBtn);
+        trackItem.addEventListener('click',()=>playSpecificTrack(index));
+        setupDragEvents(trackItem);
         playlistDiv.appendChild(trackItem);
+        generateThumb(file).then(url=>{
+          if(!url){return;}
+          thumbDiv.innerHTML='';
+          const img=document.createElement('img'); img.src=url; img.alt=''; img.loading='lazy';
+          thumbDiv.appendChild(img);
+        });
       }
-      // Re-apply any active search query after playlist re-renders
-      if (typeof applySearch === 'function') applySearch();
+      const sq=document.getElementById('searchInput');
+      if(sq&&sq.value.trim()) applySearch(sq.value.trim());
     }
 
-    function shuffleArray() {
-      const currentName = currentTrack ? currentTrack.name : null;
-      for (let k in urlCache) {
-        if (k !== currentName) { try{URL.revokeObjectURL(urlCache[k]);}catch(e){} delete urlCache[k]; }
-      }
-      for (let i=playlist.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[playlist[i],playlist[j]]=[playlist[j],playlist[i]];}
-      if (currentTrack) currentTrackIndex = playlist.findIndex(f=>f.name===currentTrack.name);
-      // FIX: use -1 (not 0) so the next "play" resolves to index 0 (first track).
-      else currentTrackIndex = -1;
+    let dragSrcIndex=-1;
+    function setupDragEvents(item){
+      item.addEventListener('dragstart',(e)=>{dragSrcIndex=parseInt(item.dataset.index);item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+      item.addEventListener('dragend',()=>{item.classList.remove('dragging');});
+      item.addEventListener('dragover',(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
+      item.addEventListener('drop',(e)=>{
+        e.preventDefault();
+        const targetIndex=parseInt(item.dataset.index);
+        if(dragSrcIndex<0||dragSrcIndex===targetIndex) return;
+        const moved=playlist.splice(dragSrcIndex,1)[0];
+        playlist.splice(targetIndex,0,moved);
+        if(currentTrackIndex===dragSrcIndex) currentTrackIndex=targetIndex;
+        else if(currentTrackIndex>dragSrcIndex&&currentTrackIndex<=targetIndex) currentTrackIndex--;
+        else if(currentTrackIndex<dragSrcIndex&&currentTrackIndex>=targetIndex) currentTrackIndex++;
+        dragSrcIndex=-1; updatePlaylistDisplay();
+      });
     }
 
-    shuffleBtn.onclick=()=>{
-      shuffleArray();
-      const orig=shuffleBtn.textContent; shuffleBtn.textContent='Shuffled!';
-      setTimeout(()=>shuffleBtn.textContent=orig,1000);
-      updatePlaylistDisplay();
-    };
-
-    function isAlarmFile(file) {
-      // Strip extension, normalise to lowercase, then check if the base name
-      // is "add_alarm" or any numbered/copy variant the OS might append:
-      // Add_Alarm(1).mp3  Add_Alarm (2).mp3  Add_Alarm - Copy.mp3  add_alarm_1.mp3
-      const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
-      // Core name must start with "add_alarm"
-      if (!base.startsWith('add_alarm')) return false;
-      // What follows after "add_alarm" must be empty OR only spaces/underscores/
-      // hyphens/digits/parentheses/the word "copy" — nothing else
-      const suffix = base.slice('add_alarm'.length).replace(/[\s_\-()copy\d]/g, '');
-      return suffix === '';
-    }
-
-    function updateCustomAlarmInfo() {
-      const el = document.getElementById('customAlarmInfo');
-      if (!el) return;
-      if (customAlarmFiles.length === 0) {
-        el.textContent = '';
-      } else if (customAlarmFiles.length === 1) {
-        el.innerHTML = `✅ Custom alarm loaded: <strong>${customAlarmFiles[0].name}</strong>`;
+    const ALARM_FILE_RE = /^add.?alarm/i;
+    function updateCustomAlarmInfo(){
+      const el=document.getElementById('customAlarmInfo');
+      if(!el) return;
+      if(customAlarmFiles.length){
+        el.textContent=`✅ ${customAlarmFiles.length} custom alarm file(s) loaded.`;
       } else {
-        el.innerHTML = `✅ ${customAlarmFiles.length} custom alarm sounds loaded — one will be picked at random each alarm:<br>` +
-          customAlarmFiles.map(f=>`&nbsp;&nbsp;• ${f.name}`).join('<br>');
+        el.textContent='No custom alarm file found. Using built-in beep.';
       }
     }
 
-    function addFileToPlaylist(file) {
-      if(!file||!file.name) return;
+    function addFileToPlaylist(file){
       const lower=file.name.toLowerCase();
       if(!lower.endsWith('.mp3')&&!lower.endsWith('.mp4')) return;
-      // Intercept Add_Alarm files
-      if (isAlarmFile(file)) {
-        if (!customAlarmFiles.find(f=>f.name===file.name)) {
+      if(ALARM_FILE_RE.test(file.name)){
+        if(!customAlarmFiles.find(f=>f.name===file.name)){
           customAlarmFiles.push(file);
+          if(customAlarmFiles.length===1){
+            alarmSound.src=urlCache[file.name]||(urlCache[file.name]=URL.createObjectURL(file));
+          }
           updateCustomAlarmInfo();
         }
         return;
@@ -922,14 +895,16 @@
       audio.pause(); video.pause();
       audio.src=''; video.src='';
       audio.load(); video.load();
+      if(window._lyricsOnStop) window._lyricsOnStop();
     }
 
     function playSpecificTrack(index) {
-      if(isAlarmActive) return; if(index<0||index>=playlist.length) return;
+      if(isAlarmActive) return;
+      if(index<0||index>=playlist.length) return;
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
       if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
       if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
-      currentRandomPause = null; // BUG FIX: always clear any active random pause state
+      currentRandomPause=null;
       stopAllMedia(); currentTrackIndex=index; const file=playlist[index]; isVideoHidden=false;
       try {
         currentTrack=file;
@@ -939,8 +914,7 @@
         setVideoActive(isVid);
         const url=urlCache[file.name]||(urlCache[file.name]=URL.createObjectURL(file));
         nowPlaying.textContent='Loading: '+file.name;
-        elem.loop=isLoopEnabled;
-        elem.src=url; elem.load();
+        elem.loop=isLoopEnabled; elem.src=url; elem.load();
         let readyFired=false;
         function onReady(){
           if(readyFired) return; readyFired=true;
@@ -949,15 +923,15 @@
           elem.play().then(()=>{
             isPaused=false;
             nowPlaying.textContent=file.name;
+            if(window._lyricsOnTrackStart) window._lyricsOnTrackStart(file.name);
             updateTimer(); updatePlayPauseButton(); updatePlaylistDisplay();
             if(isVid&&isAutoPipEnabled) setTimeout(()=>{
               if(document.pictureInPictureEnabled&&!document.pictureInPictureElement)
                 video.requestPictureInPicture().catch(()=>{});
             },500);
-          }).catch(err=>{console.error("Error playing:",err);nowPlaying.textContent="Error: "+file.name; updatePlayPauseButton();});
+          }).catch(err=>{console.error("Error playing:",err);nowPlaying.textContent="Error: "+file.name;updatePlayPauseButton();});
         }
-        elem.oncanplaythrough=onReady;
-        elem.oncanplay=onReady;
+        elem.oncanplaythrough=onReady; elem.oncanplay=onReady;
       } catch(e){console.error("Error preparing:",e);nowPlaying.textContent="Error preparing track";}
     }
 
@@ -969,11 +943,7 @@
       stopAllMedia();
       if(!playlist.length){nowPlaying.textContent="No tracks available";updatePlayPauseButton();return;}
       const nextIndex=findNextFilteredIndex(currentTrackIndex);
-      if(nextIndex===-1){
-        const label=filterMode==='best'?'Best':'Good';
-        nowPlaying.textContent=`No ${label} Tracks found in playlist`;
-        updatePlayPauseButton(); return;
-      }
+      if(nextIndex===-1){nowPlaying.textContent=`No ${filterMode==='best'?'Best':'Good'} Tracks found`;updatePlayPauseButton();return;}
       playSpecificTrack(nextIndex);
     }
 
@@ -992,13 +962,14 @@
     function updateProgress(){
       const elem=currentMediaElement||audio;
       if(!elem.duration||isNaN(elem.duration)){progress.style.width='0%';progressThumb.style.left='0%';return;}
-      const pct=(elem.currentTime/elem.duration)*100; progress.style.width=pct+'%'; progressThumb.style.left=pct+'%';
+      const pct=(elem.currentTime/elem.duration)*100;
+      progress.style.width=pct+'%'; progressThumb.style.left=pct+'%';
     }
     function seekToEvent(e){
       const elem=currentMediaElement||audio; const rect=progressContainer.getBoundingClientRect();
       let clientX;
-      if(e.touches && e.touches.length>0) clientX=e.touches[0].clientX;
-      else if(e.changedTouches && e.changedTouches.length>0) clientX=e.changedTouches[0].clientX;
+      if(e.touches&&e.touches.length>0) clientX=e.touches[0].clientX;
+      else if(e.changedTouches&&e.changedTouches.length>0) clientX=e.changedTouches[0].clientX;
       else clientX=e.clientX;
       const pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
       if(elem.duration&&!isNaN(elem.duration)){elem.currentTime=elem.duration*pct;updateProgress();}
@@ -1028,15 +999,11 @@
       if(isPaused||!currentTrack){
         if(!currentTrack){ playNextTrack(); }
         else {
-          elem.play().then(()=>{
-            isPaused=false;
-            nowPlaying.textContent=currentTrack?currentTrack.name:'';
-            updatePlayPauseButton();
-          }).catch(()=>playNextTrack());
+          elem.play().then(()=>{isPaused=false;nowPlaying.textContent=currentTrack?currentTrack.name:'';updatePlayPauseButton();})
+              .catch(()=>playNextTrack());
         }
       } else {
-        elem.pause();
-        isPaused=true;
+        elem.pause(); isPaused=true;
         nowPlaying.textContent=currentTrack?currentTrack.name+' (Paused)':'None';
         updatePlayPauseButton();
       }
@@ -1046,22 +1013,16 @@
       const elem=currentMediaElement||audio;
       if(elem.src&&!isNaN(elem.duration)){
         const t=elem.currentTime-5;
-        if(t<0){
-          // Find previous filtered track instead of blindly going to index-1
-          const prevIdx = findPrevFilteredIndex(currentTrackIndex);
-          if(prevIdx!==-1) playSpecificTrack(prevIdx); else elem.currentTime=0;
-        } else { elem.currentTime=t; updateProgress(); }
+        if(t<0){const prevIdx=findPrevFilteredIndex(currentTrackIndex);if(prevIdx!==-1)playSpecificTrack(prevIdx);else elem.currentTime=0;}
+        else{elem.currentTime=t;updateProgress();}
       }
     });
     forward5Btn.addEventListener('click',()=>{
       const elem=currentMediaElement||audio;
       if(elem.src&&!isNaN(elem.duration)){
         const t=elem.currentTime+5;
-        if(t>=elem.duration){
-          // Use findNextFilteredIndex to respect filter at track boundaries
-          const nextIdx=findNextFilteredIndex(currentTrackIndex);
-          if(nextIdx!==-1) playSpecificTrack(nextIdx); else elem.currentTime=elem.duration;
-        } else { elem.currentTime=t; updateProgress(); }
+        if(t>=elem.duration){const nextIdx=findNextFilteredIndex(currentTrackIndex);if(nextIdx!==-1)playSpecificTrack(nextIdx);else elem.currentTime=elem.duration;}
+        else{elem.currentTime=t;updateProgress();}
       }
     });
 
@@ -1073,342 +1034,281 @@
       if(currentRandomPause){currentRandomPause=null;nowPlaying.textContent='Skipped random pause';}
       playNextTrack();
     };
-
-    const prevBtn = document.getElementById('prevBtn');
-    if (prevBtn) {
-      prevBtn.onclick = () => {
+    const prevBtn=document.getElementById('prevBtn');
+    if(prevBtn){
+      prevBtn.onclick=()=>{
         if(isAlarmActive) return;
         if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
         if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
         if(currentRandomPause){currentRandomPause=null;}
-        const prevIdx = findPrevFilteredIndex(currentTrackIndex);
-        if (prevIdx !== -1) playSpecificTrack(prevIdx);
+        const prevIdx=findPrevFilteredIndex(currentTrackIndex);
+        if(prevIdx!==-1) playSpecificTrack(prevIdx);
       };
     }
 
-    // Keyboard shortcuts — desktop/pointer:fine devices only
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
-    if (!isTouch) {
-      let kbMuted = false, kbPreMuteVol = 100;
-      document.addEventListener('keydown', (e) => {
-        // Don't fire when typing in an input
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-        const elem = currentMediaElement || audio;
-        switch(e.key) {
-          case ' ':
-            e.preventDefault();
-            playPauseBtn.click();
-            break;
-          case 'ArrowLeft':
-            e.preventDefault();
-            rewind5Btn.click();
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            forward5Btn.click();
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            volumeSlider.value = Math.min(100, parseInt(volumeSlider.value)+5);
-            applyVol();
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            volumeSlider.value = Math.max(0, parseInt(volumeSlider.value)-5);
-            applyVol();
-            break;
-          case 'n': case 'N':
-            skipBtn.click();
-            break;
-          case 'p': case 'P':
-            if (prevBtn) prevBtn.click();
-            break;
-          case 'm': case 'M':
-            if (kbMuted) {
-              volumeSlider.value = kbPreMuteVol;
-              kbMuted = false;
-            } else {
-              kbPreMuteVol = parseInt(volumeSlider.value);
-              volumeSlider.value = 0;
-              kbMuted = true;
-            }
-            applyVol();
-            break;
+    const isTouch=window.matchMedia('(pointer: coarse)').matches;
+    if(!isTouch){
+      let kbMuted=false,kbPreMuteVol=100;
+      document.addEventListener('keydown',(e)=>{
+        if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+        const elem=currentMediaElement||audio;
+        switch(e.key){
+          case ' ':e.preventDefault();playPauseBtn.click();break;
+          case 'ArrowRight':e.preventDefault();if(elem.src&&!isNaN(elem.duration)){elem.currentTime=Math.min(elem.duration,elem.currentTime+5);updateProgress();}break;
+          case 'ArrowLeft':e.preventDefault();if(elem.src&&!isNaN(elem.duration)){elem.currentTime=Math.max(0,elem.currentTime-5);updateProgress();}break;
+          case 'n':case 'N':skipBtn.click();break;
+          case 'p':case 'P':if(prevBtn)prevBtn.click();break;
+          case 'm':case 'M':
+            if(kbMuted){volumeSlider.value=kbPreMuteVol;kbMuted=false;}
+            else{kbPreMuteVol=volumeSlider.value;volumeSlider.value=0;kbMuted=true;}
+            applyVol();break;
+          case 'ArrowUp':e.preventDefault();volumeSlider.value=Math.min(100,parseInt(volumeSlider.value)+5);applyVol();break;
+          case 'ArrowDown':e.preventDefault();volumeSlider.value=Math.max(0,parseInt(volumeSlider.value)-5);applyVol();break;
         }
       });
     }
 
-    randomPauseBtn.onclick=()=>{
+    shuffleBtn.addEventListener('click',()=>{ shuffleArray(); updatePlaylistDisplay(); });
+    function shuffleArray(){
+      for(let i=playlist.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[playlist[i],playlist[j]]=[playlist[j],playlist[i]];}
+    }
+
+    randomPauseBtn.addEventListener('click',()=>{
       isRandomPauseEnabled=!isRandomPauseEnabled;
       randomPauseBtn.classList.toggle('active',isRandomPauseEnabled);
-      if(!isRandomPauseEnabled&&currentRandomPause){if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}currentRandomPause=null;playNextTrack();}
-    };
-    function startRandomPause(){
-      if(isAlarmActive) return; const ms=Math.floor(Math.random()*60001); if(ms<=0){playNextTrack();return;}
-      currentRandomPause={startTime:Date.now(),duration:ms};
-      if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
-      if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
-      if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
-      const fmt=t=>{const s=Math.floor(t/1000);return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;};
-      nowPlaying.textContent=`PAUSE (${fmt(ms)})`; updatePlayPauseButton();
-      pauseInterval=setInterval(()=>{
-        if(!currentRandomPause){clearInterval(pauseInterval);pauseInterval=null;return;}
-        const rem=Math.max(0,currentRandomPause.duration-(Date.now()-currentRandomPause.startTime));
-        nowPlaying.textContent=`PAUSE (${fmt(rem)})`;
-        if(rem<=0){clearInterval(pauseInterval);pauseInterval=null;currentRandomPause=null;playNextTrack();}
-      },1000);
-    }
-
-    function onAudioEnded(){ if(isRandomPauseEnabled)startRandomPause(); else playNextTrack(); }
-    async function onVideoEnded(){
-      if(document.pictureInPictureElement)try{await document.exitPictureInPicture();}catch(e){}
-      if(!isVideoHidden){ videoContainer.style.display='none'; setVideoActive(false); } isVideoHidden=false;
-      if(isRandomPauseEnabled)startRandomPause(); else playNextTrack();
-    }
-    audio.onended=onAudioEnded;
-    video.onended=onVideoEnded;
-
-    function checkAlarms(){
-      if(isAlarmActive) return; const now=new Date();
-      const ct=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-      const cd=now.getDay();
-      // Reset lastAlarmTime when the clock minute changes so alarm can fire again on future days
-      if(lastAlarmTime && lastAlarmTime !== ct) lastAlarmTime = null;
-      if(lastAlarmTime===ct) return;
-      alarmSettings.forEach(({index})=>{
-        const ti=document.getElementById(`alarmTime${index}`); if(!ti) return;
-        const cont=ti.closest('.alarm-item'); if(!cont) return;
-        const ok=Array.from(cont.querySelectorAll('.day-check')).some(c=>parseInt(c.value)===cd&&c.checked);
-        if(ti.value===ct&&ok){playAlarm();lastAlarmTime=ct;}
-      });
-    }
-    function playAlarm(){
-      if(isAlarmActive) return; isAlarmActive=true;
-      const elem=currentMediaElement||audio;
-      const savedFile = currentTrack ? playlist.find(f=>f.name===currentTrack.name) : null;
-      savedPlaybackState=currentTrack&&!isPaused
-        ?{wasPlaying:true,position:elem.currentTime,trackName:nowPlaying.textContent,
-          trackUrl:savedFile?(urlCache[savedFile.name]||(urlCache[savedFile.name]=URL.createObjectURL(savedFile))):elem.src,
-          trackFile:savedFile, isVideo:elem===video}
-        :{wasPlaying:false};
-      audio.pause();video.pause();
-      clearTimeout(alarmTimeout);clearTimeout(trackEndTimeout);
-      if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
-      if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
-      if(currentRandomPause)currentRandomPause=null;
-      alarmControls.style.display='block'; fixedAlarmControls.style.display='block';
-      // Hide file chooser buttons so alarm box doesn't overlap them
-      document.querySelector('label[for="fileInput"]').style.display='none';
-      document.getElementById('safariPickerLabel').style.display='none';
-      // Use custom alarm sound if available, otherwise use generated beep
-      if (customAlarmFiles.length > 0) {
-        const pick = customAlarmFiles[Math.floor(Math.random()*customAlarmFiles.length)];
-        const aUrl = urlCache['__alarm__'+pick.name] || (urlCache['__alarm__'+pick.name] = URL.createObjectURL(pick));
-        alarmSound.src = aUrl;
-      }
-      alarmSound.volume=1.0; alarmSound.loop=true; alarmSound.currentTime=0;
-      alarmSound.play().catch(e=>console.error("Alarm sound error:",e));
-      nowPlaying.textContent='ALARM ACTIVE'; timerDisplay.textContent='--:--';
-      document.body.style.animation='alarm-flash 1s infinite'; updatePlayPauseButton();
-      alarmTimeout=setTimeout(()=>{if(isAlarmActive)stopAlarm();},900000);
-    }
-
-    // ── Alarm countdown ───────────────────────────────────────────────────────
-    function updateAlarmCountdowns() {
-      const now = new Date();
-      alarmSettings.forEach(({index}) => {
-        const ti = document.getElementById(`alarmTime${index}`); if (!ti) return;
-        const cont = ti.closest('.alarm-item'); if (!cont) return;
-        let cdEl = cont.querySelector('.alarm-countdown');
-        if (!cdEl) {
-          cdEl = document.createElement('div');
-          cdEl.className = 'alarm-countdown';
-          ti.after(cdEl);
-        }
-        if (!ti.value) { cdEl.textContent = ''; return; }
-        const [ah, am] = ti.value.split(':').map(Number);
-        const checkedDays = Array.from(cont.querySelectorAll('.day-check'))
-          .filter(c => c.checked).map(c => parseInt(c.value));
-        if (!checkedDays.length) { cdEl.textContent = 'No days selected'; return; }
-        const nowTotalSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
-        const alarmTotalSec = ah*3600 + am*60;
-        let minSecs = Infinity;
-        for (let d = 0; d < 7; d++) {
-          if (!checkedDays.includes((now.getDay()+d) % 7)) continue;
-          let diff = d*86400 + alarmTotalSec - nowTotalSec;
-          if (diff <= 0 && d === 0) diff += 86400;
-          if (diff > 0 && diff < minSecs) minSecs = diff;
-        }
-        if (minSecs === Infinity) { cdEl.textContent = ''; return; }
-        const h = Math.floor(minSecs / 3600);
-        const m = Math.floor((minSecs % 3600) / 60);
-        const s = minSecs % 60;
-        const parts = [];
-        if (h > 0) parts.push(`${h}h`);
-        if (m > 0 || h > 0) parts.push(`${m}m`);
-        parts.push(`${s}s`);
-        cdEl.textContent = `fires in ${parts.join(' ')}`;
-      });
-    }
-
-    // ── Playlist Stats ────────────────────────────────────────────────────────
-    function formatBytes(b) {
-      if (!b) return '—';
-      if (b >= 1073741824) return (b/1073741824).toFixed(2)+' GB';
-      if (b >= 1048576)    return (b/1048576).toFixed(1)+' MB';
-      return Math.round(b/1024)+' KB';
-    }
-    let _statsTimeout = null, _statsRunning = false;
-    function scheduleStats() {
-      clearTimeout(_statsTimeout);
-      const statsEl = document.getElementById('playlistStats');
-      if (statsEl) statsEl.style.display = playlist.length ? 'flex' : 'none';
-      const ld = document.getElementById('psLoading');
-      if (ld) { ld.style.display=''; ld.textContent='Calculating…'; }
-      ['psTracksWrap','psDurWrap','psStoreWrap'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.display = 'none';
-      });
-      _statsTimeout = setTimeout(runStats, 8000);
-    }
-    async function runStats() {
-      if (_statsRunning) return;
-      _statsRunning = true;
-      const count = playlist.length;
-      const statsEl = document.getElementById('playlistStats');
-      if (!count) {
-        if (statsEl) statsEl.style.display = 'none';
-        _statsRunning = false; return;
-      }
-      let totalBytes = 0;
-      playlist.forEach(f => { totalBytes += (f.size || 0); });
-      let totalSecs = 0;
-      for (let i = 0; i < playlist.length; i++) {
-        if (!playlist[i].metadata) playlist[i].metadata = await loadMetadata(playlist[i]);
-        const dur = playlist[i].metadata.duration;
-        if (dur && dur !== '--:--') {
-          const [mm, ss] = dur.split(':').map(Number);
-          totalSecs += mm*60 + (ss||0);
-        }
-        if (i % 4 === 0) await new Promise(r => setTimeout(r, 60));
-      }
-      const h = Math.floor(totalSecs/3600);
-      const m = Math.floor((totalSecs%3600)/60);
-      const durStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
-      const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-      set('psTracks', count);
-      set('psDur', durStr);
-      set('psStore', formatBytes(totalBytes));
-      const ld = document.getElementById('psLoading'); if (ld) ld.style.display = 'none';
-      ['psTracksWrap','psDurWrap','psStoreWrap'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.display = '';
-      });
-      if (statsEl) statsEl.style.display = 'flex';
-      _statsRunning = false;
-    }
-
-    function addAlarm(){
-      if(alarmSettings.length>=3){alert("Maximum of 3 alarms allowed");return;}
-      const index = alarmIdCounter++;
-      const alarmItem=document.createElement('div'); alarmItem.className='alarm-item';
-      alarmItem.innerHTML=`<h4>Alarm #${alarmSettings.length+1}</h4><input type="time" id="alarmTime${index}">
-        <div class="day-checkboxes">
-          <label><input type="checkbox" class="day-check" value="0">Sun</label>
-          <label><input type="checkbox" class="day-check" value="1">Mon</label>
-          <label><input type="checkbox" class="day-check" value="2">Tue</label>
-          <label><input type="checkbox" class="day-check" value="3">Wed</label>
-          <label><input type="checkbox" class="day-check" value="4">Thu</label>
-          <label><input type="checkbox" class="day-check" value="5">Fri</label>
-          <label><input type="checkbox" class="day-check" value="6">Sat</label>
-        </div>
-        <button id="removeAlarm${index}">Remove Alarm</button>`;
-      alarmsDiv.appendChild(alarmItem);
-      document.getElementById(`removeAlarm${index}`).addEventListener('click',()=>{alarmsDiv.removeChild(alarmItem);alarmSettings=alarmSettings.filter(a=>a.index!==index);});
-      alarmSettings.push({index});
-    }
-    addAlarmBtn.addEventListener('click',addAlarm);
-
-    if('mediaSession' in navigator){
-      try{
-        navigator.mediaSession.setActionHandler('play',()=>{try{playPauseBtn.click();}catch(e){}});
-        navigator.mediaSession.setActionHandler('pause',()=>{try{playPauseBtn.click();}catch(e){}});
-        navigator.mediaSession.setActionHandler('nexttrack',()=>{
-          if(isAlarmActive)return;
-          if(currentRandomPause){if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}currentRandomPause=null;}
-          try{skipBtn.click();}catch(e){try{playNextTrack();}catch(e2){}}
-        });
-        navigator.mediaSession.setActionHandler('previoustrack',()=>{
-          if(isAlarmActive)return;
-          try{if(prevBtn)prevBtn.click();else rewind5Btn.click();}catch(e){}
-        });
-      }catch(e){console.warn("MediaSession not available:",e);}
-    }
-    window.addEventListener('beforeunload',()=>{for(let k in urlCache){try{URL.revokeObjectURL(urlCache[k]);}catch(e){}}}); 
-
-    // Search bar — VLC-style: filters display only, doesn't change playback
-    const searchInput = document.getElementById('searchInput');
-    const searchClear = document.getElementById('searchClear');
-    const searchCount = document.getElementById('searchCount');
-    let searchQuery = '';
-    function applySearch() {
-      searchQuery = searchInput.value.trim().toLowerCase();
-      const items = playlistDiv.querySelectorAll('.track-item');
-      let visible = 0, total = items.length;
-      items.forEach(item => {
-        const nameEl = item.querySelector('.track-name');
-        const text = (nameEl ? nameEl.textContent : '').toLowerCase();
-        if (!searchQuery || text.includes(searchQuery)) {
-          item.classList.remove('search-hidden'); visible++;
-        } else {
-          item.classList.add('search-hidden');
-        }
-      });
-      searchClear.classList.toggle('has-query', !!searchQuery);
-      searchCount.textContent = searchQuery ? `${visible} / ${total}` : '';
-    }
-    searchInput.addEventListener('input', applySearch);
-    searchClear.addEventListener('click', () => { searchInput.value=''; applySearch(); searchInput.focus(); });
-
-    loopBtn.addEventListener('click',()=>{
-      isLoopEnabled=!isLoopEnabled; audio.loop=isLoopEnabled; video.loop=isLoopEnabled;
-      loopBtn.classList.toggle('active',isLoopEnabled);
     });
-    autoPipBtn.onclick=()=>{isAutoPipEnabled=!isAutoPipEnabled;autoPipBtn.classList.toggle('active',isAutoPipEnabled);};
+    autoPipBtn.addEventListener('click',()=>{
+      isAutoPipEnabled=!isAutoPipEnabled;
+      autoPipBtn.classList.toggle('active',isAutoPipEnabled);
+    });
+    loopBtn.addEventListener('click',()=>{
+      isLoopEnabled=!isLoopEnabled;
+      loopBtn.classList.toggle('active',isLoopEnabled);
+      if(currentMediaElement) currentMediaElement.loop=isLoopEnabled;
+    });
     visualizerBtn.addEventListener('click',()=>{
       isVisualizerEnabled=!isVisualizerEnabled;
-      vizWrapper.style.display=isVisualizerEnabled?'block':'none';
       visualizerBtn.classList.toggle('active',isVisualizerEnabled);
-      // On desktop, grow playlist to fill the space the visualizer canvas adds
-      if (window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) {
-        playlistDiv.classList.toggle('viz-expanded', isVisualizerEnabled);
-      }
+      vizWrapper.style.display=isVisualizerEnabled?'block':'none';
+      const pl=document.getElementById('playlist');
+      if(pl) pl.classList.toggle('viz-expanded',isVisualizerEnabled);
     });
     subfoldersBtn.addEventListener('click',()=>{
-      const on = subfoldersPanel.style.display!=='block';
-      subfoldersPanel.style.display = on ? 'block' : 'none';
-      subfoldersBtn.classList.toggle('active', on);
-      if(on) subfoldersPanel.scrollIntoView({behavior:'smooth',block:'nearest'});
+      const show=subfoldersPanel.style.display!=='block';
+      subfoldersPanel.style.display=show?'block':'none';
+      subfoldersBtn.classList.toggle('active',show);
     });
 
-    function setFilter(mode){
-      filterMode = (filterMode===mode) ? 'all' : mode;
-      bestTracksBtn.classList.toggle('active', filterMode==='best');
-      goodTracksBtn.classList.toggle('active', filterMode==='good');
-      updatePlaylistDisplay();
-      if (filterMode !== 'all') {
-        // Only jump to first filtered track if current track doesn't pass the filter
-        const currentPasses = currentTrack && playlist.find(f=>f.name===currentTrack.name) && trackMatchesFilter(playlist.find(f=>f.name===currentTrack.name));
-        if (!currentPasses) {
-          const firstIdx = findFirstFilteredIndex();
-          if (firstIdx !== -1) playSpecificTrack(firstIdx);
+    audio.addEventListener('ended',()=>{ if(!isLoopEnabled) handleTrackEnd(); });
+    video.addEventListener('ended',()=>{ if(!isLoopEnabled) handleTrackEnd(); });
+    function handleTrackEnd(){
+      if(isAlarmActive) return;
+      if(isRandomPauseEnabled&&Math.random()<0.4){
+        const pauseSec=Math.floor(Math.random()*20)+5;
+        currentRandomPause={sec:pauseSec};
+        let remaining=pauseSec;
+        nowPlaying.textContent=`Random pause: ${remaining}s`;
+        updatePlayPauseButton();
+        pauseInterval=setInterval(()=>{
+          remaining--;
+          if(remaining<=0){clearInterval(pauseInterval);pauseInterval=null;currentRandomPause=null;playNextTrack();}
+          else nowPlaying.textContent=`Random pause: ${remaining}s`;
+        },1000);
+      } else {
+        playNextTrack();
+      }
+    }
+
+    function applySearch(q){
+      const lower=q.toLowerCase();
+      let vis=0;
+      document.querySelectorAll('.track-item').forEach(item=>{
+        const idx=parseInt(item.dataset.index);
+        const file=playlist[idx];
+        if(!file) return;
+        const match=file.name.toLowerCase().includes(lower)||(file.metadata&&file.metadata.artist&&file.metadata.artist.toLowerCase().includes(lower));
+        item.classList.toggle('search-hidden',!match);
+        if(match) vis++;
+      });
+      const sc=document.getElementById('searchCount');
+      if(sc) sc.textContent=`${vis}/${playlist.length}`;
+    }
+
+    const searchInput=document.getElementById('searchInput');
+    const searchClear=document.getElementById('searchClear');
+    searchInput.addEventListener('input',()=>{
+      const q=searchInput.value.trim();
+      searchClear.classList.toggle('has-query',!!q);
+      if(q) applySearch(q);
+      else{document.querySelectorAll('.track-item').forEach(i=>i.classList.remove('search-hidden'));const sc=document.getElementById('searchCount');if(sc)sc.textContent='';}
+    });
+    searchClear.addEventListener('click',()=>{
+      searchInput.value=''; searchClear.classList.remove('has-query');
+      document.querySelectorAll('.track-item').forEach(i=>i.classList.remove('search-hidden'));
+      const sc=document.getElementById('searchCount');if(sc)sc.textContent='';
+      searchInput.focus();
+    });
+
+    let statsTimer=null;
+    function scheduleStats(){ clearTimeout(statsTimer); statsTimer=setTimeout(computeStats,800); }
+    async function computeStats(){
+      const ps=document.getElementById('playlistStats');
+      const psLoading=document.getElementById('psLoading');
+      const psTracksWrap=document.getElementById('psTracksWrap');
+      const psDurWrap=document.getElementById('psDurWrap');
+      const psStoreWrap=document.getElementById('psStoreWrap');
+      if(!ps) return;
+      ps.style.display='flex'; if(psLoading) psLoading.style.display='';
+      if(psTracksWrap) psTracksWrap.style.display='none';
+      if(psDurWrap) psDurWrap.style.display='none';
+      if(psStoreWrap) psStoreWrap.style.display='none';
+      let totalSec=0,totalBytes=0;
+      for(const f of playlist){
+        if(!f.metadata) f.metadata=await loadMetadata(f);
+        const parts=(f.metadata.duration||'0:00').split(':');
+        totalSec+=parseInt(parts[0])*60+(parseInt(parts[1])||0);
+        try{totalBytes+=f.size||0;}catch(e){}
+      }
+      if(psLoading) psLoading.style.display='none';
+      const h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60);
+      const durStr=h>0?`${h}h ${m}m`:`${m}m`;
+      const mbStr=totalBytes>0?(totalBytes/1024/1024).toFixed(1)+' MB':'—';
+      document.getElementById('psTracks').textContent=playlist.length;
+      document.getElementById('psDur').textContent=durStr;
+      document.getElementById('psStore').textContent=mbStr;
+      if(psTracksWrap) psTracksWrap.style.display='';
+      if(psDurWrap) psDurWrap.style.display='';
+      if(totalBytes>0&&psStoreWrap) psStoreWrap.style.display='';
+    }
+
+    let alarmRings=[];
+    addAlarmBtn.addEventListener('click',()=>addAlarm());
+    function addAlarm(saved){
+      const id=alarmIdCounter++;
+      const setting={id,time:saved?saved.time:'07:00',days:saved?saved.days:[],label:saved?saved.label:'',enabled:saved?saved.enabled!==false:true};
+      alarmSettings.push(setting);
+      renderAlarms(); saveAlarmSettings();
+    }
+    function renderAlarms(){
+      alarmsDiv.innerHTML='';
+      alarmSettings.forEach((s,idx)=>{
+        const div=document.createElement('div'); div.className='alarm-item';
+        const row1=document.createElement('div'); row1.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+        const timeInput=document.createElement('input'); timeInput.type='time'; timeInput.value=s.time;
+        timeInput.addEventListener('change',()=>{s.time=timeInput.value;saveAlarmSettings();});
+        const labelInput=document.createElement('input');
+        Object.assign(labelInput,{type:'text',placeholder:'Label (optional)',value:s.label});
+        Object.assign(labelInput.style,{background:'black',color:'gold',border:'1px solid gold',padding:'5px 8px',borderRadius:'4px',fontSize:'13px',minWidth:'80px',maxWidth:'160px'});
+        labelInput.addEventListener('change',()=>{s.label=labelInput.value;saveAlarmSettings();});
+        const enableChk=document.createElement('input'); enableChk.type='checkbox'; enableChk.checked=s.enabled;
+        enableChk.addEventListener('change',()=>{s.enabled=enableChk.checked;saveAlarmSettings();});
+        const delBtn=document.createElement('button');
+        Object.assign(delBtn.style,{background:'#1a0000',color:'#ff4444',border:'1px solid #ff4444',padding:'4px 9px',borderRadius:'5px',fontSize:'12px',cursor:'pointer'});
+        delBtn.textContent='Remove';
+        delBtn.addEventListener('click',()=>{alarmSettings.splice(idx,1);renderAlarms();saveAlarmSettings();});
+        row1.appendChild(timeInput); row1.appendChild(labelInput); row1.appendChild(enableChk); row1.appendChild(delBtn);
+        const dayRow=document.createElement('div'); dayRow.className='day-checkboxes';
+        ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach((d,di)=>{
+          const lbl=document.createElement('label');
+          lbl.style.cssText='display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;';
+          const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=s.days.includes(di);
+          chk.addEventListener('change',()=>{
+            if(chk.checked){if(!s.days.includes(di))s.days.push(di);}
+            else{s.days=s.days.filter(x=>x!==di);}
+            saveAlarmSettings();
+          });
+          lbl.appendChild(chk); lbl.appendChild(document.createTextNode(d));
+          dayRow.appendChild(lbl);
+        });
+        const countdown=document.createElement('div'); countdown.className='alarm-countdown'; countdown.id='countdown-'+s.id;
+        div.appendChild(row1); div.appendChild(dayRow); div.appendChild(countdown);
+        alarmsDiv.appendChild(div);
+      });
+    }
+    function saveAlarmSettings(){
+      try{localStorage.setItem('impAlarms',JSON.stringify(alarmSettings));}catch(e){}
+    }
+    function loadAlarmSettings(){
+      try{
+        const saved=JSON.parse(localStorage.getItem('impAlarms')||'[]');
+        saved.forEach(s=>addAlarm(s));
+      }catch(e){}
+    }
+    loadAlarmSettings();
+
+    function checkAlarms(){
+      if(isAlarmActive) return;
+      const now=new Date();
+      const h=now.getHours().toString().padStart(2,'0');
+      const m=now.getMinutes().toString().padStart(2,'0');
+      const timeStr=`${h}:${m}`;
+      const dayOfWeek=now.getDay();
+      for(const s of alarmSettings){
+        if(!s.enabled) continue;
+        if(s.time!==timeStr) continue;
+        if(s.days.length>0&&!s.days.includes(dayOfWeek)) continue;
+        const key=`${s.id}-${timeStr}`;
+        if(lastAlarmTime===key) continue;
+        lastAlarmTime=key;
+        fireAlarm(s); break;
+      }
+    }
+    function fireAlarm(s){
+      isAlarmActive=true;
+      savedPlaybackState={wasPlaying:currentTrack&&!isPaused,trackName:currentTrack?.name,
+        trackUrl:currentMediaElement?.src,trackFile:currentTrack,
+        position:currentMediaElement?.currentTime||0,isVideo:currentMediaElement===video};
+      if(currentMediaElement) currentMediaElement.pause();
+      if(customAlarmFiles.length){
+        const pick=customAlarmFiles[Math.floor(Math.random()*customAlarmFiles.length)];
+        alarmSound.src=urlCache[pick.name]||(urlCache[pick.name]=URL.createObjectURL(pick));
+      }
+      alarmSound.loop=true; alarmSound.play().catch(()=>{});
+      alarmControls.style.display='block'; fixedAlarmControls.style.display='block';
+      document.body.style.animation='alarm-flash 1s infinite';
+      document.querySelector('label[for="fileInput"]').style.display='none';
+      if(document.getElementById('safariPickerLabel'))
+        document.getElementById('safariPickerLabel').style.display='none';
+      updatePlayPauseButton();
+    }
+    function updateAlarmCountdowns(){
+      const now=new Date();
+      alarmSettings.forEach(s=>{
+        const el=document.getElementById('countdown-'+s.id);
+        if(!el||!s.enabled){if(el)el.textContent='';return;}
+        const [ah,am]=s.time.split(':').map(Number);
+        let next=new Date(now);
+        next.setHours(ah,am,0,0);
+        if(next<=now) next.setDate(next.getDate()+1);
+        if(s.days.length>0){
+          for(let i=0;i<7;i++){
+            const d=new Date(now);
+            d.setDate(d.getDate()+i); d.setHours(ah,am,0,0);
+            if(d>now&&s.days.includes(d.getDay())){next=d;break;}
+          }
         }
+        const diff=Math.max(0,Math.floor((next-now)/1000));
+        const dh=Math.floor(diff/3600),dm=Math.floor((diff%3600)/60),ds=diff%60;
+        el.textContent=`in ${dh>0?dh+'h ':''}${dm}m ${ds}s`;
+      });
+    }
+
+    function setFilter(mode){
+      if(filterMode===mode){filterMode='all';bestTracksBtn.classList.remove('active');goodTracksBtn.classList.remove('active');}
+      else{
+        filterMode=mode;
+        bestTracksBtn.classList.toggle('active',mode==='best');
+        goodTracksBtn.classList.toggle('active',mode==='good');
+        const currentPasses=currentTrack&&playlist.find(f=>f.name===currentTrack.name&&trackMatchesFilter(f));
+        if(!currentPasses){const firstIdx=findFirstFilteredIndex();if(firstIdx!==-1)playSpecificTrack(firstIdx);}
       }
     }
     bestTracksBtn.addEventListener('click',()=>setFilter('best'));
     goodTracksBtn.addEventListener('click',()=>setFilter('good'));
 
     function resumeAudioCtx(){ if(audioContext.state==='suspended') audioContext.resume().catch(()=>{}); }
-    document.addEventListener('click', resumeAudioCtx);
-    document.addEventListener('touchstart', resumeAudioCtx, {passive:true});
+    document.addEventListener('click',resumeAudioCtx);
+    document.addEventListener('touchstart',resumeAudioCtx,{passive:true});
     const analyserNode=audioContext.createAnalyser(); analyserNode.fftSize=256; analyserNode.smoothingTimeConstant=0.82;
     const eqFilter=audioContext.createBiquadFilter(); eqFilter.type='highshelf'; eqFilter.frequency.value=2000; eqFilter.gain.value=0;
     eqFilter.connect(analyserNode); analyserNode.connect(audioContext.destination);
@@ -1423,37 +1323,23 @@
     audio.addEventListener('play',()=>connectToGraph(audio));
     video.addEventListener('play',()=>connectToGraph(video));
 
-    // Sync Play/Pause button when the user clicks the native video/audio controls
-    function onMediaPlay() {
-      if (isAlarmActive || currentRandomPause) return;
-      isPaused = false;
-      if (currentTrack) nowPlaying.textContent = currentTrack.name;
-      updatePlayPauseButton();
+    function onMediaPlay(){if(isAlarmActive||currentRandomPause)return;isPaused=false;if(currentTrack)nowPlaying.textContent=currentTrack.name;updatePlayPauseButton();}
+    function onMediaPause(){
+      if(isAlarmActive||currentRandomPause)return;
+      const elem=currentMediaElement||audio;
+      if(elem.duration&&elem.currentTime>=elem.duration-0.25) return;
+      isPaused=true;if(currentTrack)nowPlaying.textContent=currentTrack.name+' (Paused)';updatePlayPauseButton();
     }
-    function onMediaPause() {
-      if (isAlarmActive || currentRandomPause) return;
-      // Ignore pause events that fire right at the natural end of a track
-      const elem = currentMediaElement || audio;
-      if (elem.duration && elem.currentTime >= elem.duration - 0.25) return;
-      isPaused = true;
-      if (currentTrack) nowPlaying.textContent = currentTrack.name + ' (Paused)';
-      updatePlayPauseButton();
-    }
-    audio.addEventListener('play', onMediaPlay);
-    audio.addEventListener('pause', onMediaPause);
-    video.addEventListener('play', onMediaPlay);
-    video.addEventListener('pause', onMediaPause);
+    audio.addEventListener('play',onMediaPlay); audio.addEventListener('pause',onMediaPause);
+    video.addEventListener('play',onMediaPlay); video.addEventListener('pause',onMediaPause);
 
     const vizCanvas=document.getElementById('visualizerCanvas');
     const vizCtx=vizCanvas.getContext('2d');
     function syncCanvasSize(){const w=vizCanvas.offsetWidth||600,h=vizCanvas.offsetHeight||90;if(vizCanvas.width!==w||vizCanvas.height!==h){vizCanvas.width=w;vizCanvas.height=h;}}
-    syncCanvasSize(); window.addEventListener('resize', () => {
+    syncCanvasSize();
+    window.addEventListener('resize',()=>{
       syncCanvasSize();
-      // Re-evaluate video-active class on resize
-      if (videoContainer.style.display === 'block') {
-        setVideoActive(true);
-        adjustPlaylistToVideo();
-      }
+      if(videoContainer.style.display==='block'){setVideoActive(true);adjustPlaylistToVideo();}
     });
     const freqBins=new Uint8Array(analyserNode.frequencyBinCount);
     const peakHold=new Float32Array(analyserNode.frequencyBinCount).fill(0);
@@ -1486,7 +1372,6 @@
       else if(gain<0)frequencyDisplay.textContent=`Bass +${Math.abs(Math.round(gain))} dB`;
       else frequencyDisplay.textContent=`Treble +${Math.round(gain)} dB`;
     });
-
     const pitchSlider=document.getElementById('pitchSlider');
     const pitchDisplay=document.getElementById('pitchDisplay');
     pitchSlider.addEventListener('input',()=>{
@@ -1495,77 +1380,105 @@
       applyPlaybackRate();
     });
 
-    isPaused = true;
-    updatePlaylistDisplay();
-    updatePlayPauseButton();
-    // Auto-fade the compat hint after 10 seconds if no files loaded yet
-    setTimeout(() => {
-      const hintEl = document.getElementById('compatHintInline');
-      if (hintEl && playlist.length === 0) hintEl.classList.add('hidden');
-    }, 10000);
+    isPaused=true; updatePlaylistDisplay(); updatePlayPauseButton();
+    setTimeout(()=>{const hintEl=document.getElementById('compatHintInline');if(hintEl&&playlist.length===0)hintEl.classList.add('hidden');},10000);
 
     // ── File System Access API — Folder Memory ────────────────────────────────
-    // Uses IndexedDB to persist the directory handle across sessions.
-    // Only activates on browsers that support showDirectoryPicker (Chrome/Edge).
     (function initFolderMemory() {
-      if (!('showDirectoryPicker' in window)) return; // Safari/Firefox fallback — just hide
-      const bar        = document.getElementById('folderMemoryBar');
-      const btn        = document.getElementById('rememberFolderBtn');
-      const forgetBtn  = document.getElementById('forgetFolderBtn');
-      const statusEl   = document.getElementById('folderMemoryStatus');
+      if (!('showDirectoryPicker' in window)) return;
+      const bar       = document.getElementById('folderMemoryBar');
+      const btn       = document.getElementById('rememberFolderBtn');
+      const forgetBtn = document.getElementById('forgetFolderBtn');
+      const statusEl  = document.getElementById('folderMemoryStatus');
       bar.style.display = 'flex';
 
-      const chooseLabel   = document.querySelector('label[for="fileInput"]');
-      const safariLabel   = document.getElementById('safariPickerLabel');
-
+      const chooseLabel = document.querySelector('label[for="fileInput"]');
+      const safariLabel = document.getElementById('safariPickerLabel');
       function setManualPickerVisible(visible) {
         if (chooseLabel) chooseLabel.style.display = visible ? '' : 'none';
-        // Only show safariLabel if on iOS AND visible requested
         if (safariLabel) safariLabel.style.display = (visible && isIOS) ? 'inline-block' : 'none';
       }
 
-      const DB_NAME    = 'IMPFolderDB';
-      const DB_VERSION = 1;
-      const STORE      = 'handles';
-      const KEY        = 'musicFolder';
-
-      function openDB() {
-        return new Promise((resolve, reject) => {
-          const req = indexedDB.open(DB_NAME, DB_VERSION);
-          req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
-          req.onsuccess = e => resolve(e.target.result);
-          req.onerror   = e => reject(e.target.error);
+      const DB_NAME='IMPFolderDB', DB_VERSION=1, STORE='handles', KEY='musicFolder';
+      function openDB(){
+        return new Promise((resolve,reject)=>{
+          const req=indexedDB.open(DB_NAME,DB_VERSION);
+          req.onupgradeneeded=e=>e.target.result.createObjectStore(STORE);
+          req.onsuccess=e=>resolve(e.target.result);
+          req.onerror=e=>reject(e.target.error);
         });
       }
-      async function saveHandle(handle) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, 'readwrite');
-          tx.objectStore(STORE).put(handle, KEY);
-          tx.oncomplete = resolve;
-          tx.onerror = e => reject(e.target.error);
+      async function saveHandle(handle){
+        const db=await openDB();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(STORE,'readwrite');
+          tx.objectStore(STORE).put(handle,KEY);
+          tx.oncomplete=resolve; tx.onerror=e=>reject(e.target.error);
         });
       }
-      async function loadHandle() {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, 'readonly');
-          const req = tx.objectStore(STORE).get(KEY);
-          req.onsuccess = e => resolve(e.target.result || null);
-          req.onerror   = e => reject(e.target.error);
+      async function loadHandle(){
+        const db=await openDB();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(STORE,'readonly');
+          const req=tx.objectStore(STORE).get(KEY);
+          req.onsuccess=e=>resolve(e.target.result||null);
+          req.onerror=e=>reject(e.target.error);
         });
       }
-      async function deleteHandle() {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE, 'readwrite');
+      async function deleteHandle(){
+        const db=await openDB();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(STORE,'readwrite');
           tx.objectStore(STORE).delete(KEY);
-          tx.oncomplete = resolve;
-          tx.onerror = e => reject(e.target.error);
+          tx.oncomplete=resolve; tx.onerror=e=>reject(e.target.error);
         });
       }
 
-      // Recursively collect all .mp3/.mp4 files from a directory handle
+      // Collect lyrics from Lyrics/Best and Lyrics/Good subfolders
+      async function collectLyricsSubdir(dirHandle, rating) {
+        try {
+          for await (const [name, entry] of dirHandle.entries()) {
+            if (entry.kind === 'file' && name.toLowerCase().endsWith('.txt')) {
+              try {
+                const file = await entry.getFile();
+                const text = await file.text();
+                if (text.trim()) {
+                  let stem = name.replace(/\.txt$/i, '');
+                  stem = stem.replace(/^\(Missing\)\s*/i, '');
+                  if (window._lyricsRegisterFile) window._lyricsRegisterFile(stem, text, rating);
+                }
+              } catch(e) {}
+            }
+          }
+        } catch(e) {}
+      }
+
+      // Handle the root-level Lyrics folder → scan Best and Good subdirs
+      async function collectLyricsRoot(dirHandle) {
+        try {
+          for await (const [name, entry] of dirHandle.entries()) {
+            if (entry.kind === 'directory') {
+              const nl = name.toLowerCase();
+              if (nl === 'best') await collectLyricsSubdir(entry, 'best');
+              else if (nl === 'good') await collectLyricsSubdir(entry, 'good');
+              // Also scan flat Lyrics folder (legacy)
+              else await collectLyricsSubdir(entry, 'other');
+            } else if (entry.kind === 'file' && name.toLowerCase().endsWith('.txt')) {
+              // Flat .txt directly in Lyrics/ — treat as unrated
+              try {
+                const file = await entry.getFile();
+                const text = await file.text();
+                if (text.trim()) {
+                  let stem = name.replace(/\.txt$/i, '');
+                  stem = stem.replace(/^\(Missing\)\s*/i, '');
+                  if (window._lyricsRegisterFile) window._lyricsRegisterFile(stem, text, 'any');
+                }
+              } catch(e) {}
+            }
+          }
+        } catch(e) {}
+      }
+
       async function collectFiles(dirHandle, collected) {
         for await (const [name, entry] of dirHandle.entries()) {
           if (entry.kind === 'file') {
@@ -1573,16 +1486,18 @@
             if (lower.endsWith('.mp3') || lower.endsWith('.mp4')) {
               try {
                 const file = await entry.getFile();
-                // Mimic webkitRelativePath so folder detection still works
                 Object.defineProperty(file, 'webkitRelativePath', {
-                  value: dirHandle.name + '/' + name,
-                  writable: false
+                  value: dirHandle.name + '/' + name, writable: false
                 });
                 collected.push(file);
-              } catch(e) { /* skip unreadable files */ }
+              } catch(e) {}
             }
           } else if (entry.kind === 'directory') {
-            await collectFilesDeep(entry, dirHandle.name, collected);
+            if (name.toLowerCase() === 'lyrics') {
+              await collectLyricsRoot(entry);
+            } else {
+              await collectFilesDeep(entry, dirHandle.name, collected);
+            }
           }
         }
       }
@@ -1595,8 +1510,7 @@
               try {
                 const file = await entry.getFile();
                 Object.defineProperty(file, 'webkitRelativePath', {
-                  value: myPath + '/' + name,
-                  writable: false
+                  value: myPath + '/' + name, writable: false
                 });
                 collected.push(file);
               } catch(e) {}
@@ -1609,20 +1523,15 @@
 
       async function loadFromHandle(handle) {
         statusEl.textContent = 'Loading folder…';
-        btn.textContent = '⏳ Loading…';
-        btn.disabled = true;
+        btn.textContent = '⏳ Loading…'; btn.disabled = true;
         try {
           const files = [];
           await collectFiles(handle, files);
           if (!files.length) {
-            statusEl.textContent = 'No MP3/MP4 files found in that folder.';
-            btn.textContent = '📁 Remember Folder';
-            btn.disabled = false;
-            return;
+            statusEl.textContent = 'No MP3/MP4 files found.';
+            btn.textContent = '📁 Remember Folder'; btn.disabled = false; return;
           }
-          // Clear playlist and reload
-          playlist.length = 0;
-          customAlarmFiles.length = 0;
+          playlist.length = 0; customAlarmFiles.length = 0;
           currentTrack = null; currentTrackIndex = -1; currentMediaElement = null;
           stopAllMedia();
           for (const k in urlCache) { try { URL.revokeObjectURL(urlCache[k]); } catch(e) {} }
@@ -1631,95 +1540,260 @@
           shuffleArray();
           await updatePlaylistDisplay();
           scheduleStats();
-          const folderName = handle.name;
-          statusEl.textContent = `✅ ${folderName} — ${playlist.length} tracks loaded`;
-          btn.textContent = '🔄 Reload Folder';
-          btn.classList.add('remembered');
-          btn.disabled = false;
-          forgetBtn.style.display = 'inline-block';
-          setManualPickerVisible(false);
+          statusEl.textContent = `✅ ${handle.name} — ${playlist.length} tracks loaded`;
+          btn.textContent = '🔄 Reload Folder'; btn.classList.add('remembered'); btn.disabled = false;
+          forgetBtn.style.display = 'inline-block'; setManualPickerVisible(false);
         } catch(e) {
-          statusEl.textContent = 'Could not read folder. Try clicking Remember Folder again.';
-          btn.textContent = '📁 Remember Folder';
-          btn.classList.remove('remembered');
-          btn.disabled = false;
-          setManualPickerVisible(true);
-          console.warn('Folder load error:', e);
+          statusEl.textContent = 'Could not read folder. Try again.';
+          btn.textContent = '📁 Remember Folder'; btn.classList.remove('remembered'); btn.disabled = false;
+          setManualPickerVisible(true); console.warn('Folder load error:', e);
         }
       }
 
-      // On page load — try to restore the saved handle
       async function tryAutoRestore() {
         try {
           const handle = await loadHandle();
-          if (!handle) return; // nothing saved yet
-          // Check if we still have permission without prompting
+          if (!handle) return;
           const perm = await handle.queryPermission({ mode: 'read' });
           if (perm === 'granted') {
             statusEl.textContent = 'Restoring saved folder…';
-            forgetBtn.style.display = 'inline-block';
-            setManualPickerVisible(false);
+            forgetBtn.style.display = 'inline-block'; setManualPickerVisible(false);
             await loadFromHandle(handle);
           } else {
-            // Permission needs re-granting — show a prompt button instead of auto-requesting
-            btn.textContent = '🔓 Reload Saved Folder';
-            btn.classList.add('remembered');
-            forgetBtn.style.display = 'inline-block';
-            setManualPickerVisible(false);
+            btn.textContent = '🔓 Reload Saved Folder'; btn.classList.add('remembered');
+            forgetBtn.style.display = 'inline-block'; setManualPickerVisible(false);
             statusEl.textContent = 'Click to reload your saved folder (permission needed)';
-            // Store handle reference so the button click can use it
             btn._pendingHandle = handle;
           }
-        } catch(e) {
-          // IndexedDB might be blocked (private mode etc.) — fail silently
-          console.warn('Auto-restore failed:', e);
-        }
+        } catch(e) { console.warn('Auto-restore failed:', e); }
       }
 
       btn.addEventListener('click', async () => {
-        // If there's a pending handle that just needs permission, use it
         if (btn._pendingHandle) {
-          const handle = btn._pendingHandle;
-          btn._pendingHandle = null;
+          const handle = btn._pendingHandle; btn._pendingHandle = null;
           try {
             const perm = await handle.requestPermission({ mode: 'read' });
-            if (perm === 'granted') {
-              await loadFromHandle(handle);
-            } else {
-              statusEl.textContent = 'Permission denied — pick folder manually below.';
-            }
-          } catch(e) {
-            statusEl.textContent = 'Permission error. Try using Choose Files / Folders instead.';
-          }
+            if (perm === 'granted') await loadFromHandle(handle);
+            else statusEl.textContent = 'Permission denied.';
+          } catch(e) { statusEl.textContent = 'Permission error.'; }
           return;
         }
-        // Normal flow — open the folder picker
         try {
           const handle = await window.showDirectoryPicker({ mode: 'read' });
-          await saveHandle(handle);
-          btn._pendingHandle = null;
+          await saveHandle(handle); btn._pendingHandle = null;
           await loadFromHandle(handle);
         } catch(e) {
-          if (e.name !== 'AbortError') {
-            statusEl.textContent = 'Could not open folder picker.';
-            console.warn('showDirectoryPicker error:', e);
+          if (e.name !== 'AbortError') { statusEl.textContent = 'Could not open folder picker.'; console.warn(e); }
+        }
+      });
+      forgetBtn.addEventListener('click', async () => {
+        await deleteHandle(); btn.textContent = '📁 Remember Folder';
+        btn.classList.remove('remembered'); btn._pendingHandle = null;
+        forgetBtn.style.display = 'none'; statusEl.textContent = 'Folder forgotten.';
+        setManualPickerVisible(true);
+      });
+      setTimeout(tryAutoRestore, 300);
+    })();
+
+    // ── Lyrics Engine ────────────────────────────────────────────────────────
+    (function initLyrics() {
+      // lyricsMap: stemLower → { text, rating }
+      const lyricsMap = {};
+      let lyricsLines = [];     // [{text, timeMs}]
+      let lyricsIdx   = -1;
+      let lyricsTimer = null;
+      let viewAllMode = false;
+      let currentStemForWrong = null;  // track stem so "Mark Wrong" knows what to rename
+
+      // DOM
+      const lyricsContext  = document.getElementById('lyricsContext');
+      const ctxEls = [
+        document.getElementById('lyricsCtx0'),
+        document.getElementById('lyricsCtx1'),
+        document.getElementById('lyricsCtxActive'),
+        document.getElementById('lyricsCtx2'),
+        document.getElementById('lyricsCtx3'),
+      ];
+      const fullView   = document.getElementById('lyricsFullView');
+      const statusEl   = document.getElementById('lyricsStatus');
+      const noTsEl     = document.getElementById('lyricsNoTs');
+      const viewAllBtn = document.getElementById('lyricsViewAllBtn');
+      const wrongBtn   = document.getElementById('lyricsWrongBtn');
+
+      // Toggle View All / Line-by-line
+      viewAllBtn.addEventListener('click', () => {
+        viewAllMode = !viewAllMode;
+        viewAllBtn.textContent = viewAllMode ? 'Line View' : 'View All';
+        lyricsContext.style.display = viewAllMode ? 'none' : 'flex';
+        fullView.style.display = viewAllMode ? 'block' : 'none';
+        if (viewAllMode && lyricsLines.length) {
+          // Build full text, strip timestamps from display
+          fullView.textContent = lyricsLines.map(l => l.text).join('\n');
+          // Scroll to current line
+          if (lyricsIdx >= 0) {
+            const lineH = fullView.scrollHeight / lyricsLines.length;
+            fullView.scrollTop = Math.max(0, lyricsIdx * lineH - fullView.clientHeight / 2);
           }
         }
       });
 
-      forgetBtn.addEventListener('click', async () => {
-        await deleteHandle();
-        btn.textContent = '📁 Remember Folder';
-        btn.classList.remove('remembered');
-        btn._pendingHandle = null;
-        forgetBtn.style.display = 'none';
-        statusEl.textContent = 'Folder forgotten.';
-        setManualPickerVisible(true);
+      // Mark Wrong — renames file via download prompt isn't possible,
+      // but we can clear it from memory and show a notice so user knows to fix in sorter
+      wrongBtn.addEventListener('click', () => {
+        if (!currentStemForWrong) return;
+        // Remove from local map so the panel shows "no lyrics"
+        delete lyricsMap[currentStemForWrong];
+        clearDisplay('Marked as wrong — re-open Music Sorter to re-fetch.');
+        statusEl.textContent = `"${currentStemForWrong}" removed from cache. Use Music Sorter → Lyrics tab to re-fetch.`;
+        currentStemForWrong = null;
       });
 
-      // Kick off auto-restore after a short delay so the player UI renders first
-      setTimeout(tryAutoRestore, 300);
+      // Parse lyrics text: keep timestamps for syncing, strip from display
+      // Supports: "m:ss text", "mm:ss text", "m:ss:xx text" (LRC converted)
+      function parseLyrics(raw) {
+        const tsRe = /^(\d{1,2}):(\d{2})(?::(\d{2}))?\s+([\s\S]+)/;
+        const lines = [];
+        for (let ln of raw.split('\n')) {
+          ln = ln.trim();
+          if (!ln) continue;
+          const m = tsRe.exec(ln);
+          if (m) {
+            const hasH = m[3] !== undefined;
+            const h    = hasH ? parseInt(m[1]) : 0;
+            const mins = hasH ? parseInt(m[2]) : parseInt(m[1]);
+            const secs = hasH ? parseInt(m[3]) : parseInt(m[2]);
+            const timeMs = (h*3600 + mins*60 + secs) * 1000;
+            const text = m[4].trim();
+            if (text) lines.push({ text, timeMs });
+          } else {
+            lines.push({ text: ln, timeMs: -1 });
+          }
+        }
+        return lines;
+      }
+
+      // Display 5 context lines: 2 before (dim), active (bright), 2 after (dim)
+      function showLine(idx) {
+        if (!lyricsLines.length) return;
+        idx = Math.max(0, Math.min(lyricsLines.length - 1, idx));
+        lyricsIdx = idx;
+
+        const offsets = [-2, -1, 0, 1, 2];
+        offsets.forEach((off, i) => {
+          const li = idx + off;
+          const el = ctxEls[i];
+          if (li >= 0 && li < lyricsLines.length) {
+            el.textContent = lyricsLines[li].text;
+            el.style.display = '';
+            el.className = 'lyrics-ctx-line' + (off === 0 ? ' active' : (Math.abs(off)===1 ? ' near' : ''));
+          } else {
+            el.textContent = '';
+            el.style.display = 'none';
+          }
+        });
+
+        // Sync full view scroll if open
+        if (viewAllMode && lyricsLines.length) {
+          const lineH = fullView.scrollHeight / lyricsLines.length;
+          fullView.scrollTop = Math.max(0, idx * lineH - fullView.clientHeight / 2);
+        }
+      }
+
+      function clearDisplay(msg) {
+        lyricsLines = []; lyricsIdx = -1;
+        ctxEls.forEach((el, i) => {
+          el.textContent = i === 2 ? (msg || '') : '';
+          el.className = 'lyrics-ctx-line' + (i === 2 ? ' active lyrics-empty' : '');
+          el.style.display = '';
+        });
+        fullView.textContent = '';
+        noTsEl.style.display = 'none';
+      }
+
+      function stemOf(filename) {
+        return filename.replace(/\.[^.]+$/, '').toLowerCase().trim();
+      }
+
+      function loadLyricsFor(filename) {
+        if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
+        const s = stemOf(filename);
+        currentStemForWrong = s;
+        const entry = lyricsMap[s];
+
+        if (!entry) {
+          clearDisplay('No lyrics — use Music Sorter to fetch');
+          statusEl.textContent = 'No lyrics file found for this song.';
+          noTsEl.style.display = 'none';
+          return;
+        }
+
+        lyricsLines = parseLyrics(entry.text);
+        if (!lyricsLines.length) {
+          clearDisplay('Lyrics file is empty.');
+          statusEl.textContent = 'Empty lyrics file.';
+          noTsEl.style.display = 'none';
+          return;
+        }
+
+        const hasTimestamps = lyricsLines.some(l => l.timeMs >= 0);
+        showLine(0);
+        statusEl.textContent = hasTimestamps
+          ? `${lyricsLines.length} lines · timestamp-synced`
+          : `${lyricsLines.length} lines · evenly distributed`;
+        noTsEl.style.display = hasTimestamps ? 'none' : 'block';
+
+        if (viewAllMode) {
+          fullView.textContent = lyricsLines.map(l => l.text).join('\n');
+        }
+
+        // Auto-scroll: timestamp mode (poll 200ms) or even-distribution (poll 400ms)
+        if (hasTimestamps) {
+          lyricsTimer = setInterval(() => {
+            const elem = currentMediaElement || audio;
+            if (!elem || isNaN(elem.duration)) return;
+            const posMs = elem.currentTime * 1000;
+            // Binary-search for last timestamp <= posMs
+            let lo = 0, hi = lyricsLines.length - 1, best = 0;
+            while (lo <= hi) {
+              const mid = (lo + hi) >> 1;
+              if (lyricsLines[mid].timeMs >= 0 && lyricsLines[mid].timeMs <= posMs) {
+                best = mid; lo = mid + 1;
+              } else { hi = mid - 1; }
+            }
+            if (best !== lyricsIdx) showLine(best);
+          }, 200);
+        } else {
+          lyricsTimer = setInterval(() => {
+            const elem = currentMediaElement || audio;
+            if (!elem || isNaN(elem.duration) || !elem.duration) return;
+            const pct = elem.currentTime / elem.duration;
+            const clamped = Math.min(lyricsLines.length - 1, Math.floor(pct * lyricsLines.length));
+            if (clamped !== lyricsIdx) showLine(clamped);
+          }, 400);
+        }
+      }
+
+      // Public API
+      window._lyricsOnTrackStart = function(filename) { loadLyricsFor(filename); };
+      window._lyricsRegisterFile = function(stem, text, rating) {
+        const key = stem.toLowerCase().trim();
+        // Prefer timestamped version if we already have a plain one
+        const existing = lyricsMap[key];
+        const newHasTs = /^\d{1,2}:\d{2}/.test(text.split('\n').find(l=>l.trim())||'');
+        const oldHasTs = existing && /^\d{1,2}:\d{2}/.test((existing.text||'').split('\n').find(l=>l.trim())||'');
+        if (!existing || (newHasTs && !oldHasTs)) {
+          lyricsMap[key] = { text, rating: rating || 'any' };
+        }
+      };
+      window._lyricsOnStop = function() {
+        if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
+        currentStemForWrong = null;
+        clearDisplay('No song playing');
+        statusEl.textContent = '';
+        noTsEl.style.display = 'none';
+      };
     })();
+    // ── End Lyrics Engine ─────────────────────────────────────────────────
 
   });
 </script>
