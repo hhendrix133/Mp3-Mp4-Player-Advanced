@@ -423,10 +423,9 @@
     <!-- RIGHT: Lyrics -->
     <div id="lyricsCol">
       <div id="lyricsHeader">
-        <h3>🎤 Lyrics</h3>
+        <h3>✦ LYRICS</h3>
         <div id="lyricsHeaderBtns">
           <button class="lyrics-ctrl-btn" id="lyricsViewAllBtn">View All</button>
-          <button class="lyrics-ctrl-btn wrong" id="lyricsWrongBtn">✗ Wrong</button>
         </div>
       </div>
       <div id="lyricsBody">
@@ -1181,11 +1180,15 @@
       if(totalBytes>0&&psStoreWrap) psStoreWrap.style.display='';
     }
 
+    const MAX_ALARMS = 3;
     let alarmRings=[];
-    addAlarmBtn.addEventListener('click',()=>addAlarm());
+    addAlarmBtn.addEventListener('click',()=>{
+      if(alarmSettings.length >= MAX_ALARMS) return;
+      addAlarm();
+    });
     function addAlarm(saved){
       const id=alarmIdCounter++;
-      const setting={id,time:saved?saved.time:'07:00',days:saved?saved.days:[],label:saved?saved.label:'',enabled:saved?saved.enabled!==false:true};
+      const setting={id,time:saved?saved.time:'07:00',days:saved?saved.days:[],label:saved?saved.label:'',enabled:true};
       alarmSettings.push(setting);
       renderAlarms(); saveAlarmSettings();
     }
@@ -1200,13 +1203,12 @@
         Object.assign(labelInput,{type:'text',placeholder:'Label (optional)',value:s.label});
         Object.assign(labelInput.style,{background:'black',color:'gold',border:'1px solid gold',padding:'5px 8px',borderRadius:'4px',fontSize:'13px',minWidth:'80px',maxWidth:'160px'});
         labelInput.addEventListener('change',()=>{s.label=labelInput.value;saveAlarmSettings();});
-        const enableChk=document.createElement('input'); enableChk.type='checkbox'; enableChk.checked=s.enabled;
-        enableChk.addEventListener('change',()=>{s.enabled=enableChk.checked;saveAlarmSettings();});
+        s.enabled = true; // alarms are always active
         const delBtn=document.createElement('button');
         Object.assign(delBtn.style,{background:'#1a0000',color:'#ff4444',border:'1px solid #ff4444',padding:'4px 9px',borderRadius:'5px',fontSize:'12px',cursor:'pointer'});
         delBtn.textContent='Remove';
         delBtn.addEventListener('click',()=>{alarmSettings.splice(idx,1);renderAlarms();saveAlarmSettings();});
-        row1.appendChild(timeInput); row1.appendChild(labelInput); row1.appendChild(enableChk); row1.appendChild(delBtn);
+        row1.appendChild(timeInput); row1.appendChild(labelInput); row1.appendChild(delBtn);
         const dayRow=document.createElement('div'); dayRow.className='day-checkboxes';
         ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach((d,di)=>{
           const lbl=document.createElement('label');
@@ -1224,6 +1226,8 @@
         div.appendChild(row1); div.appendChild(dayRow); div.appendChild(countdown);
         alarmsDiv.appendChild(div);
       });
+      // Show/hide Add Alarm button based on limit
+      addAlarmBtn.style.display = alarmSettings.length >= MAX_ALARMS ? 'none' : '';
     }
     function saveAlarmSettings(){
       try{localStorage.setItem('impAlarms',JSON.stringify(alarmSettings));}catch(e){}
@@ -1250,6 +1254,8 @@
         const key=`${s.id}-${timeStr}`;
         if(lastAlarmTime===key) continue;
         lastAlarmTime=key;
+        // If no days selected, it's a one-shot alarm — disable after firing
+        if(s.days.length===0){ s.enabled=false; saveAlarmSettings(); renderAlarms(); }
         fireAlarm(s); break;
       }
     }
@@ -1275,18 +1281,17 @@
       const now=new Date();
       alarmSettings.forEach(s=>{
         const el=document.getElementById('countdown-'+s.id);
-        if(!el||!s.enabled){if(el)el.textContent='';return;}
+        if(!el){return;}
+        // Only show countdown when specific days are selected
+        if(!s.enabled||s.days.length===0){el.textContent='';return;}
         const [ah,am]=s.time.split(':').map(Number);
-        let next=new Date(now);
-        next.setHours(ah,am,0,0);
-        if(next<=now) next.setDate(next.getDate()+1);
-        if(s.days.length>0){
-          for(let i=0;i<7;i++){
-            const d=new Date(now);
-            d.setDate(d.getDate()+i); d.setHours(ah,am,0,0);
-            if(d>now&&s.days.includes(d.getDay())){next=d;break;}
-          }
+        let next=null;
+        for(let i=0;i<7;i++){
+          const d=new Date(now);
+          d.setDate(d.getDate()+i); d.setHours(ah,am,0,0);
+          if(d>now&&s.days.includes(d.getDay())){next=d;break;}
         }
+        if(!next){el.textContent='';return;}
         const diff=Math.max(0,Math.floor((next-now)/1000));
         const dh=Math.floor(diff/3600),dm=Math.floor((diff%3600)/60),ds=diff%60;
         el.textContent=`in ${dh>0?dh+'h ':''}${dm}m ${ds}s`;
@@ -1618,7 +1623,6 @@
       const statusEl   = document.getElementById('lyricsStatus');
       const noTsEl     = document.getElementById('lyricsNoTs');
       const viewAllBtn = document.getElementById('lyricsViewAllBtn');
-      const wrongBtn   = document.getElementById('lyricsWrongBtn');
 
       // Toggle View All / Line-by-line
       viewAllBtn.addEventListener('click', () => {
@@ -1637,16 +1641,7 @@
         }
       });
 
-      // Mark Wrong — renames file via download prompt isn't possible,
-      // but we can clear it from memory and show a notice so user knows to fix in sorter
-      wrongBtn.addEventListener('click', () => {
-        if (!currentStemForWrong) return;
-        // Remove from local map so the panel shows "no lyrics"
-        delete lyricsMap[currentStemForWrong];
-        clearDisplay('Marked as wrong — re-open Music Sorter to re-fetch.');
-        statusEl.textContent = `"${currentStemForWrong}" removed from cache. Use Music Sorter → Lyrics tab to re-fetch.`;
-        currentStemForWrong = null;
-      });
+
 
       // Parse lyrics text: keep timestamps for syncing, strip from display
       // Supports: "m:ss text", "mm:ss text", "m:ss:xx text" (LRC converted)
