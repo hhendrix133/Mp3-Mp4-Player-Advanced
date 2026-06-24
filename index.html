@@ -185,7 +185,18 @@
       #controlsCol h3 { font-size: 13px; margin: 0 0 14px; }
     }
 
-    @media (pointer: coarse) { #prevBtn { display: none !important; } }
+    @media (pointer: coarse) {
+      #prevBtn { display: none !important; }
+      /* Hide subfolder/visualizer/filter buttons — not used on mobile */
+      #subfoldersBtn, #visualizerBtn, #bestTracksBtn, #goodTracksBtn { display: none !important; }
+      /* Center volume & playback sliders inside their box */
+      .volume-controls { display: flex !important; flex-direction: column !important; align-items: center !important; }
+      .volume-controls h3 { text-align: center; width: 100%; }
+      .slider-grid { justify-content: center !important; }
+      .slider-col { min-width: unset !important; width: 100%; max-width: 340px; }
+      .slider-row { justify-content: center; width: 100%; }
+      .slider-row input[type="range"] { flex: 1; width: auto; min-width: 0; }
+    }
 
     #subfoldersPanel { display: none; margin-top: 14px; border: 1px solid rgba(255,215,0,0.4);
       border-radius: 8px; padding: 16px 18px; background: #0d0d0d; }
@@ -207,9 +218,13 @@
 
     @media (max-width: 480px) {
       body { margin: 10px 10px 80px; }
-      #clock { font-size: 11px; top: 14px; right: 10px; }
+      /* Push title high and give it right-padding so it clears the clock widget */
+      h1 { margin: 0 0 8px 0; padding-right: 100px; font-size: 20px; line-height: 1.2; }
+      #clock { font-size: 11px; top: 10px; right: 10px; }
       #clockDate { font-size: 9px; }
       #playlistStats { display: none !important; }
+      /* Hide the compat hint on mobile so the search bar gets full width */
+      #compatHintInline { display: none !important; }
       #controls { gap: 4px; }
       #playlist { max-height: 220px; padding: 6px; }
       .slider-col { flex: 1 1 140px; }
@@ -1165,16 +1180,22 @@
       for(const f of playlist){
         if(!f.metadata) f.metadata=await loadMetadata(f);
         const parts=(f.metadata.duration||'0:00').split(':');
-        totalSec+=parseInt(parts[0])*60+(parseInt(parts[1])||0);
-        try{totalBytes+=f.size||0;}catch(e){}
+        const seg=(parseInt(parts[0])||0)*60+(parseInt(parts[1])||0);
+        totalSec+=isNaN(seg)?0:seg;
+        const sz=typeof f.size==='number'&&!isNaN(f.size)?f.size:0;
+        totalBytes+=sz;
       }
       if(psLoading) psLoading.style.display='none';
       const h=Math.floor(totalSec/3600),m=Math.floor((totalSec%3600)/60);
       const durStr=h>0?`${h}h ${m}m`:`${m}m`;
-      const mbStr=totalBytes>0?(totalBytes/1024/1024).toFixed(1)+' MB':'—';
+      let storageStr='—';
+      if(totalBytes>0){
+        const mb=totalBytes/1024/1024;
+        storageStr=mb>=1024?(mb/1024).toFixed(1)+' GB':mb.toFixed(1)+' MB';
+      }
       document.getElementById('psTracks').textContent=playlist.length;
       document.getElementById('psDur').textContent=durStr;
-      document.getElementById('psStore').textContent=mbStr;
+      document.getElementById('psStore').textContent=storageStr;
       if(psTracksWrap) psTracksWrap.style.display='';
       if(psDurWrap) psDurWrap.style.display='';
       if(totalBytes>0&&psStoreWrap) psStoreWrap.style.display='';
