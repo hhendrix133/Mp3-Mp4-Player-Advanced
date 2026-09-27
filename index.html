@@ -11,7 +11,7 @@
     body { background-color: black; color: gold; font-family: sans-serif;
            margin: 20px; position: relative; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
     h1 { color: gold; }
-    .file-chooser, button { background-color: yellow; color: black; border: none;
+    .file-chooser, button { background-color: gold; color: black; border: none;
       padding: 8px 12px; margin: 4px; cursor: pointer; border-radius: 6px; font-weight: bold;
       touch-action: manipulation; -webkit-appearance: none; }
     input[type="file"] { display: none; }
@@ -35,7 +35,7 @@
     .drag-handle:active { cursor: grabbing; }
     .track-info { display: flex; flex-direction: column; flex: 1; gap: 2px; min-width: 0; }
     .track-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .track-meta { font-size: 12px; color: #ccc; opacity: 0.8; }
+    .track-meta { font-size: 12px; color: #ccc; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .folder-badge { display: inline-block; font-size: 9px; font-weight: bold; padding: 1px 5px;
       border-radius: 10px; margin-left: 5px; vertical-align: middle; letter-spacing: 0.5px; }
     .folder-badge.best { background: #1a5c1a; color: #4dff4d; border: 1px solid #4dff4d; }
@@ -44,6 +44,12 @@
       border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;
       transition: background 0.15s; touch-action: manipulation; }
     .remove-btn:active, .remove-btn:hover { background: #ff4444; color: black; }
+    .track-actions { display: flex; gap: 5px; flex-shrink: 0; align-items: center; }
+    .queue-btn { background: #001a1a; color: #4dd0e1; border: 1px solid #4dd0e1; padding: 4px 8px;
+      border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; flex-shrink: 0;
+      white-space: nowrap; transition: background 0.15s; touch-action: manipulation; }
+    .queue-btn:hover { background: rgba(77,208,225,0.25); }
+    .queue-btn.queued { background: #4dd0e1; color: black; }
     /* Alarm inline box (inside bottom panel) */
     .alarm { border: 1px solid gold; padding: 10px; border-radius: 4px; }
     .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
@@ -117,6 +123,27 @@
     #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; border-color: rgba(255,215,0,0.4); }
     #searchClear.has-query { color: rgba(255,215,0,0.85); border-color: rgba(255,215,0,0.45); }
     #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
+    /* Custom dropdown, not a native <select> — Chrome on Windows renders the open <select>
+       popup with the OS accent color and ignores CSS for its hover state, so a real element
+       is the only way to make that hover match the rest of the theme. */
+    #scopeSelect { position: relative; flex-shrink: 0; }
+    #scopeTrigger { background: #111; color: gold; border: 1px solid rgba(255,215,0,0.4); border-radius: 6px;
+      padding: 5px 8px; font-size: 11px; cursor: pointer; min-height: 34px; white-space: nowrap;
+      display: flex; align-items: center; gap: 5px; font-family: inherit; }
+    #scopeTrigger:hover, #scopeTrigger.open { border-color: gold; }
+    #scopeTrigger .scope-arrow { font-size: 9px; opacity: 0.7; }
+    #scopeMenu { position: absolute; top: calc(100% + 4px); right: 0; background: #111;
+      border: 1px solid gold; border-radius: 6px; min-width: 100%; z-index: 20; overflow: hidden;
+      display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    #scopeMenu.open { display: block; }
+    #scopeMenu .scope-option { padding: 6px 10px; font-size: 11px; color: gold; white-space: nowrap; cursor: pointer; }
+    #scopeMenu .scope-option:hover, #scopeMenu .scope-option.active { background: gold; color: black; }
+    /* PC only — a mouse/trackpad browser has room for this; touch devices (phones/tablets) don't. */
+    @media (pointer: coarse) { #scopeSelect { display: none !important; } }
+    .star-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 0 3px;
+      line-height: 1; flex-shrink: 0; color: gold; opacity: 0.5; touch-action: manipulation; }
+    .star-btn:hover { opacity: 0.85; }
+    .star-btn.favorited { opacity: 1; }
     #playlistStats {
       display: none; align-items: center; gap: 0;
       background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.25);
@@ -128,8 +155,8 @@
     #playlistStats .ps-val { font-size: 12px; color: gold; font-weight: bold; }
     #playlistStats .ps-loading { color: rgba(255,215,0,0.3); font-style: italic; font-size: 10px; }
     #compatHintInline { font-size: 11px; color: gold; opacity: 0.4; white-space: nowrap; letter-spacing: 0.4px;
-      transition: opacity 0.4s ease; pointer-events: none; padding-left: 8px; margin-left: auto; }
-    #compatHintInline.hidden { opacity: 0; }
+      transition: opacity 0.4s ease; pointer-events: none; padding-left: 8px; }
+    #compatHintInline.hidden { opacity: 0; width: 0; padding-left: 0; overflow: hidden; }
     .track-item.search-hidden { display: none; }
     .track-left { min-width: 0; }
     .track-thumb { height: 36px; width: auto; min-width: 36px; max-width: 80px;
@@ -372,13 +399,22 @@
     <button id="subfoldersBtn"  class="toggle-btn">Subfolders</button>
     <button id="bestTracksBtn"  class="toggle-btn">Best Tracks</button>
     <button id="goodTracksBtn"  class="toggle-btn">Good Tracks</button>
+    <button id="pipConsoleBtn"  class="toggle-btn" style="display:none;">PIP Console</button>
   </div>
 
   <div id="progressContainer" title="Click or drag to seek"><div id="progress"></div><div id="progressThumb"></div></div>
   <div id="searchBar">
-    <input type="text" id="searchInput" placeholder="Search tracks…" autocomplete="off" spellcheck="false" />
+    <input type="text" id="searchInput" placeholder="Search tracks or lyrics…" autocomplete="off" spellcheck="false" />
     <button id="searchClear">✕</button>
     <span id="searchCount"></span>
+    <div id="scopeSelect" title="Search by file name, lyrics, or both">
+      <button type="button" id="scopeTrigger"><span id="scopeLabel">Name</span><span class="scope-arrow">▾</span></button>
+      <div id="scopeMenu">
+        <div class="scope-option" data-value="both">Both</div>
+        <div class="scope-option" data-value="name">Name</div>
+        <div class="scope-option" data-value="lyrics">Lyrics</div>
+      </div>
+    </div>
     <span id="compatHintInline">Compatible With Mp3 &amp; Mp4</span>
     <div id="playlistStats">
       <span id="psLoading" class="ps-loading">—</span>
@@ -484,6 +520,11 @@
       <div><span style="color:gold;font-weight:bold;">M</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Mute / Unmute</span></div>
       <div><span style="color:gold;font-weight:bold;">↑ ↓</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume ±5%</span></div>
     </div>
+    <h4 style="margin-top:18px;">▶️ Song Queue</h4>
+    <p><strong>Queue</strong> on a track plays it next. Queue a few in a row and the <em>last</em> one you queued plays first — first one you queued plays last — so the most recent thing you wanted to hear jumps to the front. Once a queued song starts, it's off the queue. When the queue runs empty, normal playback just continues on from wherever that last queued song was in the list. Click a queued track's button again to remove just that one.</p>
+    <p><strong>Double-click</strong> any Queue button to clear the whole queue at once.</p>
+    <h4 style="margin-top:18px;">🔎 Search Modes</h4>
+    <p>The small dropdown next to the search bar (desktop only) controls what your search actually looks at: <strong>Name</strong> matches file names only, <strong>Lyrics</strong> matches lyrics text only, and <strong>Both</strong> checks either. It remembers whatever you last picked. If you don't have any matching lyrics <code>.txt</code> files loaded, Lyrics and Both won't find anything extra beyond what Name already would — that's expected, not a bug.</p>
     <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
     <p>Name any .mp3/.mp4 file <strong>Add_Alarm</strong> and upload it with your music. Multiple variants work: Add_Alarm.mp3, Add_Alarm(1).mp3, etc.</p>
     <div id="customAlarmInfo" style="margin-top:8px;font-size:12px;color:rgba(255,215,0,0.65);"></div>
@@ -517,6 +558,7 @@
     const subfoldersBtn      = document.getElementById('subfoldersBtn');
     const bestTracksBtn      = document.getElementById('bestTracksBtn');
     const goodTracksBtn      = document.getElementById('goodTracksBtn');
+    const pipConsoleBtn      = document.getElementById('pipConsoleBtn');
     const subfoldersPanel    = document.getElementById('subfoldersPanel');
     const addAlarmBtn        = document.getElementById('addAlarmBtn');
     const volumeSlider       = document.getElementById('volumeSlider');
@@ -545,6 +587,38 @@
 
     let playlist = [], currentTrackIndex = -1, currentTrack = null, currentMediaElement = null;
     let isLoadingFolder = false;
+    // "Play next" stack: last one queued plays first (pop from the end), and it comes off the
+    // stack the moment it starts playing. Once the stack runs dry, normal playback just resumes
+    // from wherever that last-played queued track sat in the list (see playNextTrack()).
+    let playQueue = [];
+    // What actually played, in order — so Previous can undo a queue-jump or a manual click
+    // elsewhere in the list, not just step back one slot in list order.
+    let playHistory = [];
+    // Favorites: purely a visual marker the user sets per track, persisted across sessions.
+    // Not used by search, filtering, or playback order in any way.
+    let favorites = new Set();
+    try { favorites = new Set(JSON.parse(localStorage.getItem('impFavorites')||'[]')); } catch(e) {}
+    function isFavorited(file){ return favorites.has(file.name); }
+    function toggleFavorite(file){
+      if(favorites.has(file.name)) favorites.delete(file.name); else favorites.add(file.name);
+      try { localStorage.setItem('impFavorites', JSON.stringify([...favorites])); } catch(e) {}
+    }
+    const queueBtnMap = new Map(); // file -> its row's Queue button, rebuilt on every render
+    function queueLabelFor(file){
+      const qi = playQueue.indexOf(file);
+      if (qi===-1) return '➕ Queue';
+      return `▶ Queued #${playQueue.length-qi}`;
+    }
+    function refreshQueueButtons(){
+      queueBtnMap.forEach((btn,file)=>{
+        btn.textContent = queueLabelFor(file);
+        btn.classList.toggle('queued', playQueue.includes(file));
+      });
+    }
+    // Bumped every time updatePlaylistDisplay() is (re)called. Each running call captures its own
+    // number and checks it after every await; if a newer call has since started, the older one
+    // stops touching the DOM instead of racing the newer one and interleaving duplicate rows.
+    let playlistRenderGen = 0;
     function dedupePlaylist(){
       const seen = new Set(); const deduped = [];
       for (const f of playlist) {
@@ -717,10 +791,76 @@
             const p=file.webkitRelativePath.split('/');
             if(p.length>=3)artist=p[p.length-2]; else if(p.length===2)artist=p[0];
           }
-          URL.revokeObjectURL(elem.src); resolve({duration:dur,artist});
+          const durationSec=elem.duration;
+          URL.revokeObjectURL(elem.src); resolve({duration:dur,durationSec,artist});
         };
-        elem.onerror=()=>{URL.revokeObjectURL(elem.src);resolve({duration:'--:--',artist:'Unknown Artist'});};
-        setTimeout(()=>{URL.revokeObjectURL(elem.src);resolve({duration:'--:--',artist:'Unknown Artist'});},3000);
+        elem.onerror=()=>{URL.revokeObjectURL(elem.src);resolve({duration:'--:--',durationSec:null,artist:'Unknown Artist'});};
+        setTimeout(()=>{URL.revokeObjectURL(elem.src);resolve({duration:'--:--',durationSec:null,artist:'Unknown Artist'});},3000);
+      });
+    }
+
+    // Short, adaptive file-size string: stays in whatever unit keeps it compact (B/KB/MB/GB),
+    // matching how the storage stat box already auto-scales rather than being locked to one unit.
+    function formatFileSize(bytes) {
+      if (bytes===null||bytes===undefined||isNaN(bytes)) return null;
+      if (bytes<1024) return bytes+' B';
+      const units=['KB','MB','GB','TB']; let val=bytes,i=-1;
+      do { val/=1024; i++; } while (val>=1024 && i<units.length-1);
+      return val.toFixed(val<10?2:(val<100?1:0))+' '+units[i];
+    }
+
+    // Single shared reader for embedded tags (album/artist/year/picture), keyed by file name.
+    // Both generateThumb() (artwork) and getDisplayMeta() (the metadata line) read from this same
+    // cache/promise so a track's file only ever gets parsed by jsmediatags once, not twice.
+    const tagCache = {};
+    function readTags(file) {
+      if (tagCache[file.name] !== undefined) return tagCache[file.name];
+      const p = new Promise((resolve) => {
+        if (typeof jsmediatags === 'undefined') { resolve({album:null,artist:null,year:null,picUrl:null}); return; }
+        const finish = (result) => resolve(result);
+        try {
+          jsmediatags.read(file, {
+            onSuccess: (tag) => {
+              const t = (tag && tag.tags) || {};
+              let picUrl = null;
+              if (t.picture && t.picture.data) {
+                try {
+                  const bytes = new Uint8Array(t.picture.data);
+                  const blob = new Blob([bytes], { type: t.picture.format || 'image/jpeg' });
+                  picUrl = URL.createObjectURL(blob);
+                } catch(e) { picUrl = null; }
+              }
+              const rawYear = t.year || t.TYER || t.TDRC || null;
+              const yearMatch = rawYear ? String(rawYear).match(/\d{4}/) : null;
+              finish({
+                album: t.album || null,
+                artist: t.artist || null,
+                year: yearMatch ? yearMatch[0] : null,
+                picUrl
+              });
+            },
+            onError: () => finish({album:null,artist:null,year:null,picUrl:null})
+          });
+        } catch(e) { finish({album:null,artist:null,year:null,picUrl:null}); }
+        setTimeout(()=>finish({album:null,artist:null,year:null,picUrl:null}), 5000);
+      });
+      tagCache[file.name] = p;
+      return p;
+    }
+
+    // Combines tags + file size + an estimated average bitrate into the extra fields shown on the
+    // metadata line. Anything that can't be found simply comes back null and is skipped by the caller
+    // so the line always shows whatever it does have instead of a placeholder.
+    function getDisplayMeta(file) {
+      return readTags(file).then(tags => {
+        const sizeStr = formatFileSize(file.size);
+        let bitrateStr = null;
+        const durSec = file.metadata && file.metadata.durationSec;
+        if (durSec && durSec>0 && file.size) {
+          const kbps = Math.round((file.size*8)/durSec/1000);
+          if (kbps>0 && isFinite(kbps)) bitrateStr = kbps+' kbps';
+        }
+        return { album: tags.album, artist: tags.artist, year: tags.year, sizeStr, bitrateStr };
       });
     }
 
@@ -747,26 +887,7 @@
           setTimeout(()=>{ if(thumbCache[file.name]===undefined){thumbCache[file.name]=null;URL.revokeObjectURL(url);resolve(null);} },5000);
         });
       } else {
-        return new Promise((resolve) => {
-          if (typeof jsmediatags === 'undefined') { thumbCache[file.name]=null; resolve(null); return; }
-          try {
-            jsmediatags.read(file, {
-              onSuccess: (tag) => {
-                const pic = tag.tags && tag.tags.picture;
-                if (pic && pic.data) {
-                  try {
-                    const bytes = new Uint8Array(pic.data);
-                    const blob = new Blob([bytes], { type: pic.format || 'image/jpeg' });
-                    const url = URL.createObjectURL(blob);
-                    thumbCache[file.name] = url; resolve(url);
-                  } catch(e) { thumbCache[file.name]=null; resolve(null); }
-                } else { thumbCache[file.name]=null; resolve(null); }
-              },
-              onError: () => { thumbCache[file.name]=null; resolve(null); }
-            });
-          } catch(e) { thumbCache[file.name]=null; resolve(null); }
-          setTimeout(()=>{ if(thumbCache[file.name]===undefined){thumbCache[file.name]=null;resolve(null);} },5000);
-        });
+        return readTags(file).then(tags => { thumbCache[file.name]=tags.picUrl; return tags.picUrl; });
       }
     }
 
@@ -807,6 +928,13 @@
     }
 
     async function updatePlaylistDisplay() {
+      // Claim this render. Loading a big library means loadMetadata() below can await for a while
+      // per track, and in that window something else (Shuffle, a remove, a new folder scan finishing)
+      // can call updatePlaylistDisplay() again. Without this guard, the older call keeps appending its
+      // own leftover rows into the freshly-cleared list after the newer call already rebuilt it, which
+      // is what produces rows that look duplicated on screen even though `playlist` itself never was.
+      const myGen = ++playlistRenderGen;
+      queueBtnMap.clear();
       playlistDiv.innerHTML='';
       const hintEl = document.getElementById('compatHintInline');
       if (playlist.length>0 && hintEl && !hintEl.classList.contains('hidden')) hintEl.classList.add('hidden');
@@ -815,8 +943,10 @@
         return;
       }
       for (let index=0;index<playlist.length;index++) {
+        if (myGen!==playlistRenderGen) return; // a newer render has since started — stop here
         const file=playlist[index];
         if (!file.metadata) file.metadata=await loadMetadata(file);
+        if (myGen!==playlistRenderGen) return; // re-check: the await above may have taken a while
         const trackItem=document.createElement('div');
         trackItem.className='track-item'; trackItem.draggable=true; trackItem.dataset.index=index;
         if (currentTrack&&currentTrack.name===file.name) trackItem.classList.add('playing');
@@ -840,16 +970,65 @@
         thumbIcon.textContent=file.name.toLowerCase().endsWith('.mp4')?'🎬':'🎵';
         thumbDiv.appendChild(thumbIcon); left.appendChild(thumbDiv); left.appendChild(ti);
         const removeBtn=document.createElement('button'); removeBtn.className='remove-btn'; removeBtn.textContent='Remove';
-        removeBtn.addEventListener('click',(e)=>{e.stopPropagation();playlist.splice(index,1);if(currentTrackIndex>=index&&currentTrackIndex>0)currentTrackIndex--;updatePlaylistDisplay();scheduleStats();});
-        trackItem.appendChild(left); trackItem.appendChild(removeBtn);
+        removeBtn.addEventListener('click',(e)=>{e.stopPropagation();playlist.splice(index,1);if(currentTrackIndex>=index&&currentTrackIndex>0)currentTrackIndex--;const qi0=playQueue.indexOf(file);if(qi0!==-1)playQueue.splice(qi0,1);updatePlaylistDisplay();scheduleStats();});
+        const starBtn=document.createElement('button'); starBtn.className='star-btn';
+        starBtn.textContent = isFavorited(file) ? '★' : '☆';
+        starBtn.classList.toggle('favorited', isFavorited(file));
+        starBtn.title='Favorite this song';
+        starBtn.addEventListener('click',(e)=>{
+          e.stopPropagation();
+          toggleFavorite(file);
+          starBtn.textContent = isFavorited(file) ? '★' : '☆';
+          starBtn.classList.toggle('favorited', isFavorited(file));
+        });
+        const queueBtn=document.createElement('button'); queueBtn.className='queue-btn';
+        queueBtn.textContent=queueLabelFor(file);
+        if(playQueue.includes(file)) queueBtn.classList.add('queued');
+        queueBtn.title='Click: play this song next (click again to remove it). Double-click: clear the whole queue.';
+        let queueClickTimer=null;
+        queueBtn.addEventListener('click',(e)=>{
+          e.stopPropagation();
+          if(queueClickTimer) return; // this is the 2nd click of a double-click — dblclick handles it
+          queueClickTimer=setTimeout(()=>{
+            queueClickTimer=null;
+            const qi=playQueue.indexOf(file);
+            if(qi!==-1) playQueue.splice(qi,1); else playQueue.push(file);
+            refreshQueueButtons();
+          },280);
+        });
+        queueBtn.addEventListener('dblclick',(e)=>{
+          e.stopPropagation();
+          if(queueClickTimer){clearTimeout(queueClickTimer);queueClickTimer=null;}
+          playQueue.length=0;
+          refreshQueueButtons();
+        });
+        queueBtnMap.set(file,queueBtn);
+        const actions=document.createElement('div'); actions.className='track-actions';
+        actions.appendChild(starBtn); actions.appendChild(queueBtn); actions.appendChild(removeBtn);
+        trackItem.appendChild(left); trackItem.appendChild(actions);
         trackItem.addEventListener('click',()=>playSpecificTrack(index));
         setupDragEvents(trackItem);
         playlistDiv.appendChild(trackItem);
         generateThumb(file).then(url=>{
+          if(myGen!==playlistRenderGen) return; // this row may no longer be in the DOM
           if(!url){return;}
           thumbDiv.innerHTML='';
           const img=document.createElement('img'); img.src=url; img.alt=''; img.loading='lazy';
           thumbDiv.appendChild(img);
+        });
+        // Album/artist/year/size/bitrate take an extra read of the file, so they're filled in just
+        // after the row appears rather than delaying it — same progressive pattern as the thumbnail.
+        getDisplayMeta(file).then(extra=>{
+          if(myGen!==playlistRenderGen) return;
+          const parts=[];
+          if(extra.album) parts.push(extra.album);
+          const artistName = extra.artist || (file.metadata.artist!=='Unknown Artist'?file.metadata.artist:null);
+          if(artistName) parts.push(artistName);
+          parts.push(file.metadata.duration);
+          if(extra.year) parts.push(extra.year);
+          if(extra.sizeStr) parts.push(extra.sizeStr);
+          if(extra.bitrateStr) parts.push(extra.bitrateStr);
+          mt.textContent=parts.join(' • ');
         });
       }
       const sq=document.getElementById('searchInput');
@@ -923,7 +1102,7 @@
       if(window._lyricsOnStop) window._lyricsOnStop();
     }
 
-    function playSpecificTrack(index) {
+    function playSpecificTrack(index, fromHistory) {
       if(isAlarmActive) return;
       if(index<0||index>=playlist.length) return;
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
@@ -932,6 +1111,10 @@
       currentRandomPause=null;
       stopAllMedia(); currentTrackIndex=index; const file=playlist[index]; isVideoHidden=false;
       try {
+        if(!fromHistory&&currentTrack&&currentTrack!==file){
+          playHistory.push(currentTrack);
+          if(playHistory.length>500) playHistory.shift();
+        }
         currentTrack=file;
         const isVid=file.name.toLowerCase().endsWith('.mp4');
         const elem=isVid?video:audio; currentMediaElement=elem;
@@ -960,6 +1143,22 @@
       } catch(e){console.error("Error preparing:",e);nowPlaying.textContent="Error preparing track";}
     }
 
+    // Prefer what actually played right before this — a queue-jump or clicking around the list
+    // means "one slot up the list" often isn't the same thing as "what played last." Falls back
+    // to plain list order once history is exhausted (e.g. right after startup). Returns true if
+    // it moved to a track, false if there was nowhere to go.
+    function goToPreviousTrack(){
+      while(playHistory.length){
+        const prevFile=playHistory.pop();
+        const idx=playlist.indexOf(prevFile);
+        if(idx!==-1){ playSpecificTrack(idx,true); return true; }
+        // that track was removed from the playlist since it played — skip it, try further back
+      }
+      const prevIdx=findPrevFilteredIndex(currentTrackIndex);
+      if(prevIdx!==-1){ playSpecificTrack(prevIdx); return true; }
+      return false;
+    }
+
     function playNextTrack() {
       playbackRetryCount=0; if(isAlarmActive) return;
       if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
@@ -967,6 +1166,17 @@
       if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
       stopAllMedia();
       if(!playlist.length){nowPlaying.textContent="No tracks available";updatePlayPauseButton();return;}
+      // Queued songs take priority over the normal order — last one queued plays first, and it
+      // comes off the queue the moment it starts. Once the queue runs dry, playback just
+      // continues on from wherever that last queued song sat in the list (currentTrackIndex
+      // already points there, since playSpecificTrack() sets it for queued tracks too).
+      while (playQueue.length) {
+        const queuedFile = playQueue.pop();
+        const qIdx = playlist.indexOf(queuedFile);
+        if (qIdx !== -1) { refreshQueueButtons(); playSpecificTrack(qIdx); return; }
+        // that file was removed from the playlist since being queued — skip it, try the next one
+      }
+      refreshQueueButtons();
       const nextIndex=findNextFilteredIndex(currentTrackIndex);
       if(nextIndex===-1){nowPlaying.textContent=`No ${filterMode==='best'?'Best':'Good'} Tracks found`;updatePlayPauseButton();return;}
       playSpecificTrack(nextIndex);
@@ -997,7 +1207,14 @@
       else if(e.changedTouches&&e.changedTouches.length>0) clientX=e.changedTouches[0].clientX;
       else clientX=e.clientX;
       const pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
-      if(elem.duration&&!isNaN(elem.duration)){elem.currentTime=elem.duration*pct;updateProgress();}
+      if(elem.duration&&!isNaN(elem.duration)){
+        // Stop 0.25s short of the true end. Landing exactly on it fires the browser's native
+        // 'ended' event — the same event a track finishing on its own fires — which can trigger
+        // a random pause. Seeking is for moving around inside the song, not for ending it early.
+        const safeEnd=Math.max(0,elem.duration-0.25);
+        elem.currentTime=Math.min(elem.duration*pct,safeEnd);
+        updateProgress();
+      }
     }
     let isSeeking=false;
     progressContainer.addEventListener('mousedown',(e)=>{isSeeking=true;seekToEvent(e);});
@@ -1008,13 +1225,20 @@
     window.addEventListener('touchend',(e)=>{if(isSeeking){seekToEvent(e);isSeeking=false;}});
 
     function updatePlayPauseButton(){
-      if(isAlarmActive){playPauseBtn.textContent='Alarm Active';playPauseBtn.disabled=true;return;}
-      if(currentRandomPause){playPauseBtn.textContent='Skip Pause';playPauseBtn.disabled=false;return;}
+      if(isAlarmActive){playPauseBtn.textContent='Alarm Active';playPauseBtn.disabled=true;updatePipConsole();return;}
+      if(currentRandomPause){playPauseBtn.textContent='Skip Pause';playPauseBtn.disabled=false;updatePipConsole();return;}
       playPauseBtn.textContent=(isPaused||!currentTrack)?'Play':'Pause';
       playPauseBtn.disabled=false;
+      updatePipConsole();
     }
+    // True only while a play()/pause() toggle is actually being applied. isPaused doesn't flip to
+    // false until elem.play()'s promise settles, which is async — without this guard, a second toggle
+    // arriving in that gap (a fast second keypress, a stray duplicate click, etc.) still sees the old
+    // isPaused value, calls pause() on a play() that hasn't resolved yet, and that abort is what makes
+    // playback visibly start for a moment and then immediately stop.
+    let playPauseBusy=false;
     playPauseBtn.onclick=()=>{
-      if(isAlarmActive) return;
+      if(isAlarmActive||playPauseBusy) return;
       if(currentRandomPause){
         if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
         if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
@@ -1024,8 +1248,15 @@
       if(isPaused||!currentTrack){
         if(!currentTrack){ playNextTrack(); }
         else {
+          playPauseBusy=true;
           elem.play().then(()=>{isPaused=false;nowPlaying.textContent=currentTrack?currentTrack.name:'';updatePlayPauseButton();})
-              .catch(()=>playNextTrack());
+              .catch((err)=>{
+                // AbortError here just means our own pause() interrupted this same play() call
+                // (e.g. a rapid second toggle) — that's not a broken file, so don't skip the track.
+                if(err&&err.name==='AbortError'){updatePlayPauseButton();return;}
+                playNextTrack();
+              })
+              .finally(()=>{playPauseBusy=false;});
         }
       } else {
         elem.pause(); isPaused=true;
@@ -1038,7 +1269,7 @@
       const elem=currentMediaElement||audio;
       if(elem.src&&!isNaN(elem.duration)){
         const t=elem.currentTime-5;
-        if(t<0){const prevIdx=findPrevFilteredIndex(currentTrackIndex);if(prevIdx!==-1)playSpecificTrack(prevIdx);else elem.currentTime=0;}
+        if(t<0){ if(!goToPreviousTrack()) elem.currentTime=0; }
         else{elem.currentTime=t;updateProgress();}
       }
     });
@@ -1066,8 +1297,7 @@
         if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
         if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
         if(currentRandomPause){currentRandomPause=null;}
-        const prevIdx=findPrevFilteredIndex(currentTrackIndex);
-        if(prevIdx!==-1) playSpecificTrack(prevIdx);
+        goToPreviousTrack();
       };
     }
 
@@ -1078,8 +1308,8 @@
         if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
         const elem=currentMediaElement||audio;
         switch(e.key){
-          case ' ':e.preventDefault();playPauseBtn.click();break;
-          case 'ArrowRight':e.preventDefault();if(elem.src&&!isNaN(elem.duration)){elem.currentTime=Math.min(elem.duration,elem.currentTime+5);updateProgress();}break;
+          case ' ':e.preventDefault();if(!e.repeat)playPauseBtn.click();break;
+          case 'ArrowRight':e.preventDefault();if(elem.src&&!isNaN(elem.duration)){elem.currentTime=Math.min(Math.max(0,elem.duration-0.25),elem.currentTime+5);updateProgress();}break;
           case 'ArrowLeft':e.preventDefault();if(elem.src&&!isNaN(elem.duration)){elem.currentTime=Math.max(0,elem.currentTime-5);updateProgress();}break;
           case 'n':case 'N':skipBtn.click();break;
           case 'p':case 'P':if(prevBtn)prevBtn.click();break;
@@ -1101,6 +1331,13 @@
     randomPauseBtn.addEventListener('click',()=>{
       isRandomPauseEnabled=!isRandomPauseEnabled;
       randomPauseBtn.classList.toggle('active',isRandomPauseEnabled);
+      // Random Pauses fire between tracks ending; Loop keeps replaying the same track, so there's
+      // never a "between tracks" moment for it to land in. Keep the two mutually exclusive rather
+      // than leaving Loop on and silently doing nothing.
+      if(isRandomPauseEnabled&&isLoopEnabled){
+        isLoopEnabled=false; loopBtn.classList.remove('active');
+        if(currentMediaElement) currentMediaElement.loop=false;
+      }
     });
     autoPipBtn.addEventListener('click',()=>{
       isAutoPipEnabled=!isAutoPipEnabled;
@@ -1110,6 +1347,17 @@
       isLoopEnabled=!isLoopEnabled;
       loopBtn.classList.toggle('active',isLoopEnabled);
       if(currentMediaElement) currentMediaElement.loop=isLoopEnabled;
+      if(isLoopEnabled&&isRandomPauseEnabled){
+        isRandomPauseEnabled=false; randomPauseBtn.classList.remove('active');
+        if(currentRandomPause){
+          // A pause is actively counting down right now — cancel it and move on immediately
+          // instead of leaving the player stuck waiting on a feature that was just turned off.
+          if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
+          if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
+          currentRandomPause=null;
+          playNextTrack();
+        }
+      }
     });
     visualizerBtn.addEventListener('click',()=>{
       isVisualizerEnabled=!isVisualizerEnabled;
@@ -1123,6 +1371,70 @@
       subfoldersPanel.style.display=show?'block':'none';
       subfoldersBtn.classList.toggle('active',show);
     });
+
+    // ── PIP Console: a small always-on-top remote (Prev/Play/Skip/Shuffle/±5s) that stays
+    // visible while working in another tab, using the Document Picture-in-Picture API. It runs
+    // in the same JS realm as this page (not an iframe), so its buttons just call the existing
+    // controls directly instead of needing any message-passing. Chromium-only (Chrome/Edge 116+);
+    // the button stays hidden everywhere else instead of offering something that can't work.
+    let pipConsoleWindow = null;
+    if ('documentPictureInPicture' in window) {
+      pipConsoleBtn.style.display = '';
+      pipConsoleBtn.addEventListener('click', async () => {
+        if (pipConsoleWindow) { pipConsoleWindow.focus(); return; }
+        let win;
+        try { win = await documentPictureInPicture.requestWindow({ width: 336, height: 150 }); }
+        catch(e) { console.warn('PIP Console unavailable:', e); return; }
+        pipConsoleWindow = win;
+        win.document.head.insertAdjacentHTML('beforeend', `<style>
+          *{box-sizing:border-box;}
+          html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;}
+          body{font-family:sans-serif;user-select:none;}
+          #pcStatus{color:gold;text-align:center;padding:8px 10px;font-weight:bold;font-size:13px;
+            line-height:1.3;border-bottom:1px solid gold;display:-webkit-box;-webkit-box-orient:vertical;
+            -webkit-line-clamp:2;overflow:hidden;}
+          #pcGrid{display:flex;gap:6px;padding:8px 10px;}
+          #pcGrid button{background:yellow;color:black;border:none;border-radius:8px;font-weight:bold;
+            cursor:pointer;flex:1 1 0;min-width:0;height:46px;font-size:12px;}
+          #pcGrid button:active{opacity:.75;}
+        </style>`);
+        win.document.body.innerHTML = `
+          <div id="pcStatus">${nowPlaying.textContent}</div>
+          <div id="pcGrid">
+            <button data-a="prev">⏮ Prev</button>
+            <button data-a="playpause">${playPauseBtn.textContent}</button>
+            <button data-a="skip">Skip ⏭</button>
+            <button data-a="shuffle">Shuffle</button>
+            <button data-a="rewind5">-5s</button>
+            <button data-a="forward5">+5s</button>
+          </div>`;
+        win.document.querySelectorAll('[data-a]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            switch (btn.dataset.a) {
+              case 'prev': if (prevBtn) prevBtn.click(); break;
+              case 'playpause': playPauseBtn.click(); break;
+              case 'skip': skipBtn.click(); break;
+              case 'shuffle': shuffleBtn.click(); break;
+              case 'rewind5': rewind5Btn.click(); break;
+              case 'forward5': forward5Btn.click(); break;
+            }
+          });
+        });
+        pipConsoleBtn.classList.add('active');
+        win.addEventListener('pagehide', () => {
+          pipConsoleWindow = null;
+          pipConsoleBtn.classList.remove('active');
+        });
+      });
+    }
+    function updatePipConsole(){
+      if (!pipConsoleWindow) return;
+      const st = pipConsoleWindow.document.getElementById('pcStatus');
+      if (st) st.textContent = nowPlaying.textContent;
+      const pp = pipConsoleWindow.document.querySelector('[data-a="playpause"]');
+      if (pp) pp.textContent = playPauseBtn.textContent;
+    }
+    setInterval(updatePipConsole, 1000);
 
     audio.addEventListener('ended',()=>{ if(!isLoopEnabled) handleTrackEnd(); });
     video.addEventListener('ended',()=>{ if(!isLoopEnabled) handleTrackEnd(); });
@@ -1146,12 +1458,19 @@
 
     function applySearch(q){
       const lower=q.toLowerCase();
+      const scope=searchScopeValue;
       let vis=0;
       document.querySelectorAll('.track-item').forEach(item=>{
         const idx=parseInt(item.dataset.index);
         const file=playlist[idx];
         if(!file) return;
-        const match=file.name.toLowerCase().includes(lower)||(file.metadata&&file.metadata.artist&&file.metadata.artist.toLowerCase().includes(lower));
+        let match=false;
+        if(scope!=='lyrics'){
+          match=file.name.toLowerCase().includes(lower)||(file.metadata&&file.metadata.artist&&file.metadata.artist.toLowerCase().includes(lower));
+        }
+        if(!match&&scope!=='name'&&window._lyricsSearchMatch){
+          match=window._lyricsSearchMatch(file.name,lower);
+        }
         item.classList.toggle('search-hidden',!match);
         if(match) vis++;
       });
@@ -1173,6 +1492,50 @@
       const sc=document.getElementById('searchCount');if(sc)sc.textContent='';
       searchInput.focus();
     });
+
+    // Search scope: defaults to file-name-only the very first time, then remembers whatever
+    // was last picked. A custom dropdown (not a native <select>) so the hover color inside the
+    // open list can actually match the theme.
+    const SCOPE_LABELS = { both:'Both', name:'Name', lyrics:'Lyrics' };
+    const SCOPE_PLACEHOLDERS = { both:'Search Lyrics And File Names', name:'Search File Names', lyrics:'Search Song Lyrics' };
+    let searchScopeValue = 'name';
+    try { searchScopeValue = localStorage.getItem('impSearchScope') || 'name'; } catch(e) {}
+    const scopeTrigger=document.getElementById('scopeTrigger');
+    const scopeLabel=document.getElementById('scopeLabel');
+    const scopeMenu=document.getElementById('scopeMenu');
+    function applyScopeUI(){
+      scopeLabel.textContent = SCOPE_LABELS[searchScopeValue] || 'Name';
+      searchInput.placeholder = SCOPE_PLACEHOLDERS[searchScopeValue] || 'Search File Names';
+      scopeMenu.querySelectorAll('.scope-option').forEach(opt=>{
+        opt.classList.toggle('active', opt.dataset.value===searchScopeValue);
+      });
+    }
+    function setSearchScope(val){
+      searchScopeValue=val;
+      try { localStorage.setItem('impSearchScope', val); } catch(e) {}
+      applyScopeUI();
+      const q=searchInput.value.trim();
+      if(q) applySearch(q);
+    }
+    if(scopeTrigger&&scopeMenu){
+      scopeTrigger.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        const isOpen=scopeMenu.classList.toggle('open');
+        scopeTrigger.classList.toggle('open',isOpen);
+      });
+      scopeMenu.querySelectorAll('.scope-option').forEach(opt=>{
+        opt.addEventListener('click',(e)=>{
+          e.stopPropagation();
+          setSearchScope(opt.dataset.value);
+          scopeMenu.classList.remove('open'); scopeTrigger.classList.remove('open');
+        });
+      });
+      document.addEventListener('click',()=>{
+        scopeMenu.classList.remove('open'); scopeTrigger.classList.remove('open');
+      });
+      applyScopeUI();
+    }
+
 
     let statsTimer=null;
     function scheduleStats(){ clearTimeout(statsTimer); statsTimer=setTimeout(computeStats,800); }
@@ -1861,6 +2224,10 @@
         if (!existing || (newHasTs && !oldHasTs)) {
           lyricsMap[key] = { text, rating: rating || 'any' };
         }
+      };
+      window._lyricsSearchMatch = function(filename, queryLower) {
+        const entry = lyricsMap[stemOf(filename)];
+        return !!(entry && entry.text && entry.text.toLowerCase().includes(queryLower));
       };
       window._lyricsOnStop = function() {
         if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
