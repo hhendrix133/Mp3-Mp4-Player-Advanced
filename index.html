@@ -1244,20 +1244,25 @@
         if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
         currentRandomPause=null; playNextTrack(); return;
       }
+      if(!currentTrack){ playNextTrack(); return; }
       const elem=currentMediaElement||audio;
-      if(isPaused||!currentTrack){
-        if(!currentTrack){ playNextTrack(); }
-        else {
-          playPauseBusy=true;
-          elem.play().then(()=>{isPaused=false;nowPlaying.textContent=currentTrack?currentTrack.name:'';updatePlayPauseButton();})
-              .catch((err)=>{
-                // AbortError here just means our own pause() interrupted this same play() call
-                // (e.g. a rapid second toggle) — that's not a broken file, so don't skip the track.
-                if(err&&err.name==='AbortError'){updatePlayPauseButton();return;}
-                playNextTrack();
-              })
-              .finally(()=>{playPauseBusy=false;});
-        }
+      // Decide from the media element's own live .paused property, not the isPaused variable.
+      // .paused updates the instant something calls play()/pause() — including the video tag's
+      // own built-in controls, which don't go through this handler at all — but isPaused only
+      // catches up once that element's 'play'/'pause' event actually gets dispatched, which is a
+      // queued task, not instant. Pressing Space right after clicking the video's native
+      // play/pause button can land inside that gap and read a stale isPaused, which is what was
+      // toggling the wrong direction (or immediately undoing itself) a moment later.
+      if(elem.paused){
+        playPauseBusy=true;
+        elem.play().then(()=>{isPaused=false;nowPlaying.textContent=currentTrack?currentTrack.name:'';updatePlayPauseButton();})
+            .catch((err)=>{
+              // AbortError here just means our own pause() interrupted this same play() call
+              // (e.g. a rapid second toggle) — that's not a broken file, so don't skip the track.
+              if(err&&err.name==='AbortError'){updatePlayPauseButton();return;}
+              playNextTrack();
+            })
+            .finally(()=>{playPauseBusy=false;});
       } else {
         elem.pause(); isPaused=true;
         nowPlaying.textContent=currentTrack?currentTrack.name+' (Paused)':'None';
@@ -1321,6 +1326,17 @@
           case 'ArrowDown':e.preventDefault();volumeSlider.value=Math.max(0,parseInt(volumeSlider.value)-5);applyVol();break;
         }
       });
+      // The <video controls> element has its own built-in spacebar handling that activates on
+      // KEYUP, once focus lands on it (which just clicking its native play/pause button does) —
+      // a separate event from keydown, so preventDefault() up in the keydown handler above never
+      // touched it. That's what caused the "toggles again the instant you release the key" glitch:
+      // our own keydown-triggered toggle fires, then the video's native one fires right after on
+      // keyup and immediately reverses it. Capture phase, so this runs before the video's own
+      // internal handling gets a chance to act on the key release at all.
+      document.addEventListener('keyup',(e)=>{
+        if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+        if(e.key===' ') e.preventDefault();
+      },true);
     }
 
     shuffleBtn.addEventListener('click',()=>{ shuffleArray(); updatePlaylistDisplay(); });
