@@ -2267,8 +2267,8 @@
     top: 10px !important;
     left: 10px !important;
     z-index: 2147483647 !important;
-    background: rgba(0, 0, 0, 0.92) !important;
-    border: 2px solid #ffd700 !important;
+    background: rgba(0, 0, 0, 0.95) !important;
+    border: 2px solid #FFD700 !important;
     padding: 7px 14px !important;
     border-radius: 6px !important;
     font-family: sans-serif !important;
@@ -2278,11 +2278,11 @@
   }
   #imp-exe-banner:hover {
     box-shadow: 0 0 20px #FFD700, 0 4px 15px rgba(0,0,0,0.7) !important;
-    border-color: #ffffff !important;
+    border-color: #FFD700 !important;
     transform: scale(1.02);
   }
-  #imp-exe-banner a {
-    color: #ffd700 !important;
+  #imp-exe-banner a, #imp-exe-banner a:visited, #imp-exe-banner a:hover, #imp-exe-banner a:active {
+    color: #FFD700 !important;
     text-decoration: underline !important;
     font-weight: bold !important;
   }
@@ -2292,6 +2292,13 @@
     Install Inflated (.EXE) Now with atomic memory! (Latest: 10/18/26)
   </a>
 </div>
+<script>
+  // Forces the banner to bypass body positioning traps and stay glued to the viewport
+  (function() {
+    const banner = document.getElementById('imp-exe-banner');
+    if (banner) document.documentElement.appendChild(banner);
+  })();
+</script>
 <!-- ================================================================= -->
 <!-- END: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON -->
 <!-- ================================================================= -->
