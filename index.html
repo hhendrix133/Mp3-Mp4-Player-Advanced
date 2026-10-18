@@ -2229,33 +2229,35 @@
         }
       }
 
-      // Public API
-      window._lyricsOnTrackStart = function(filename) { loadLyricsFor(filename); };
-      window._lyricsRegisterFile = function(stem, text, rating) {
-        const key = stem.toLowerCase().trim();
-        // Prefer timestamped version if we already have a plain one
-        const existing = lyricsMap[key];
-        const newHasTs = /^\d{1,2}:\d{2}/.test(text.split('\n').find(l=>l.trim())||'');
-        const oldHasTs = existing && /^\d{1,2}:\d{2}/.test((existing.text||'').split('\n').find(l=>l.trim())||'');
-        if (!existing || (newHasTs && !oldHasTs)) {
-          lyricsMap[key] = { text, rating: rating || 'any' };
-        }
-      };
-      window._lyricsSearchMatch = function(filename, queryLower) {
-        const entry = lyricsMap[stemOf(filename)];
-        return !!(entry && entry.text && entry.text.toLowerCase().includes(queryLower));
-      };
-      window._lyricsOnStop = function() {
-        if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
-        currentStemForWrong = null;
-        clearDisplay('No song playing');
-        statusEl.textContent = '';
-        noTsEl.style.display = 'none';
-      };
-    })();
-    // ── End Lyrics Engine ─────────────────────────────────────────────────
+   // Public API
+    window._lyricsOnTrackStart = function(filename) { loadLyricsFor(filename); };
+    window._lyricsRegisterFile = function(stem, text, rating) {
+      const key = stem.toLowerCase().trim();
+      const existing = lyricsMap[key];
+      const newHasTs = /^\d{1,2}:\d{2}/.test(text.split('\n').find(l=>l.trim())||'');
+      const oldHasTs = existing && /^\d{1,2}:\d{2}/.test((existing.text||'').split('\n').find(l=>l.trim())||'');
+      if (!existing || (newHasTs && !oldHasTs)) {
+        lyricsMap[key] = { text, rating: rating || 'any' };
+      }
+    };
+    window._lyricsSearchMatch = function(filename, queryLower) {
+      const entry = lyricsMap[stemOf(filename)];
+      return !!(entry && entry.text && entry.text.toLowerCase().includes(queryLower));
+    };
+    window._lyricsOnStop = function() {
+      if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
+      currentStemForWrong = null;
+      clearDisplay('No song playing');
+      statusEl.textContent = '';
+      noTsEl.style.display = 'none';
+    };
+  })();
+  // ── End Lyrics Engine ─────────────────────────────────────────────────
 
-    <!-- ================================================================= -->
+});
+</script>
+
+<!-- ================================================================= -->
 <!-- START: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON (DO NOT DELETE) -->
 <!-- Easily update the Google Drive link and date below when needed -->
 <!-- ================================================================= -->
@@ -2267,8 +2269,6 @@
 <!-- ================================================================= -->
 <!-- END: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON -->
 <!-- ================================================================= -->
-    
-  });
-</script>
+
 </body>
 </html>
