@@ -3,214 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- ================================================================= -->
+<!-- START: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON (DO NOT DELETE) -->
+<!-- Easily update the Google Drive link and date below when needed -->
+<!-- ================================================================= -->
+<style>
+  #imp-exe-banner {
+    display: inline-block !important;
+    margin-left: 6px !important;
+    margin-bottom: 12px !important;
+    background: rgba(0, 0, 0, 0.95) !important;
+    border: 2px solid #FFD700 !important;
+    padding: 7px 14px !important;
+    border-radius: 6px !important;
+    font-family: sans-serif !important;
+    font-size: 12px !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+    transition: all 0.25s ease-in-out !important;
+  }
+  #imp-exe-banner:hover {
+    box-shadow: 0 0 22px #FFD700, 0 4px 15px rgba(0,0,0,0.7) !important;
+    border-color: #FFD700 !important;
+    transform: scale(1.02);
+  }
+  #imp-exe-banner a, #imp-exe-banner a:visited, #imp-exe-banner a:hover, #imp-exe-banner a:active {
+    color: #FFD700 !important;
+    text-decoration: underline !important;
+    font-weight: bold !important;
+  }
+</style>
+<div id="imp-exe-banner">
+  <a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank">
+    Install Inflated (.EXE) Now with atomic memory! (Latest: 10/18/26)
+  </a>
+</div>
+<!-- ================================================================= -->
+<!-- END: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON -->
+<!-- ================================================================= -->
   <title>Inflated Media Player Pro</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
-    body { background-color: black; color: gold; font-family: sans-serif;
-           margin: 20px; position: relative; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-    h1 { color: gold; }
-    .file-chooser, button { background-color: gold; color: black; border: none;
-      padding: 8px 12px; margin: 4px; cursor: pointer; border-radius: 6px; font-weight: bold;
-      touch-action: manipulation; -webkit-appearance: none; }
-    input[type="file"] { display: none; }
-    #controls { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .toggle-btn { background-color: #222; color: gold; border: 1px solid gold; padding: 5px 10px; }
-    .toggle-btn.active { background-color: gold; color: black; }
-    button:active, .file-chooser:active { opacity: 0.75; }
-    #clock { position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; color: gold; letter-spacing: 1px; line-height: 1; text-align: center; }
-    #clockSec { font-size: 14px; font-weight: bold; color: gold; vertical-align: super; letter-spacing: 0.5px; margin-left: 1px; }
-    #clockAmpm { font-size: 28px; font-weight: bold; color: gold; }
-    #clockDate { display: block; font-size: 11px; color: rgba(255,215,0,0.65); letter-spacing: 0.4px; margin-top: 3px; text-align: center; font-weight: normal; }
-    #playlist { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      margin-top: 10px; border: 1px solid gold; padding: 10px; min-height: 60px; }
-    .track-item { display: flex; justify-content: space-between; margin-bottom: 4px;
-      align-items: center; padding: 8px; border-radius: 4px; transition: background 0.2s; cursor: pointer; }
-    .track-item:hover { background: rgba(255,215,0,0.1); }
-    .track-item.playing { background: rgba(255,165,0,0.3); border: 2px solid orange; box-shadow: 0 0 10px rgba(255,165,0,0.5); }
-    .track-item.dragging { opacity: 0.5; }
-    .track-item.filtered-out { opacity: 0.3; }
-    .drag-handle { cursor: grab; margin-right: 10px; color: gold; user-select: none; }
-    .drag-handle:active { cursor: grabbing; }
-    .track-info { display: flex; flex-direction: column; flex: 1; gap: 2px; min-width: 0; }
-    .track-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .track-meta { font-size: 12px; color: #ccc; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .folder-badge { display: inline-block; font-size: 9px; font-weight: bold; padding: 1px 5px;
-      border-radius: 10px; margin-left: 5px; vertical-align: middle; letter-spacing: 0.5px; }
-    .folder-badge.best { background: #1a5c1a; color: #4dff4d; border: 1px solid #4dff4d; }
-    .folder-badge.good { background: #3a2e00; color: #FFD700; border: 1px solid #FFD700; }
-    .remove-btn { background: #1a0000; color: #ff4444; border: 1px solid #ff4444; padding: 4px 9px;
-      border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;
-      transition: background 0.15s; touch-action: manipulation; }
-    .remove-btn:active, .remove-btn:hover { background: #ff4444; color: black; }
-    .track-actions { display: flex; gap: 5px; flex-shrink: 0; align-items: center; }
-    .queue-btn { background: #001a1a; color: #4dd0e1; border: 1px solid #4dd0e1; padding: 4px 8px;
-      border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; flex-shrink: 0;
-      white-space: nowrap; transition: background 0.15s; touch-action: manipulation; }
-    .queue-btn:hover { background: rgba(77,208,225,0.25); }
-    .queue-btn.queued { background: #4dd0e1; color: black; }
-    /* Alarm inline box (inside bottom panel) */
-    .alarm { border: 1px solid gold; padding: 10px; border-radius: 4px; }
-    .alarm-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed gold; }
-    .alarm-countdown { font-size: 11px; color: rgba(255,215,0,0.55); margin-top: 4px; letter-spacing: 0.3px; }
-    .day-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-    .volume-controls { border: 1px solid gold; padding: 10px; border-radius: 4px; margin-top: 10px; }
-    #progressContainer { width: 100%; background: rgba(255,215,0,0.12); border: 1px solid gold;
-      height: 12px; border-radius: 8px; margin-top: 8px; cursor: pointer; position: relative;
-      overflow: hidden; touch-action: none; }
-    #progress { height: 100%; width: 0%; background: gold; border-radius: 8px; pointer-events: none; }
-    #progressThumb { position: absolute; left: 0; top: 50%; transform: translate(-50%, -50%);
-      width: 14px; height: 14px; border-radius: 50%; background: black;
-      border: 3px solid gold; box-sizing: border-box; pointer-events: none; }
-    /* Full-screen alarm overlay (fires on top of everything) */
-    #fixedAlarmControls { position: fixed; bottom: 0; left: 0; right: 0; background-color: red;
-      padding: 15px; text-align: center; display: none; z-index: 999; box-shadow: 0 -4px 8px rgba(0,0,0,0.5);
-      padding-bottom: max(15px, env(safe-area-inset-bottom)); }
-    #fixedStopAlarmBtn { background-color: yellow; color: black; font-weight: bold; font-size: clamp(16px,5vw,24px);
-      padding: 10px 30px; border: none; cursor: pointer; border-radius: 6px; min-height: 50px; }
-    #alarmControls { display: none; margin-top: 15px; padding: 15px; border: 2px solid red; animation: alarm-pulse 1s infinite; border-radius: 4px; }
-    #stopAlarmBtn { background-color: yellow; color: black; font-weight: bold; font-size: 18px;
-      padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; min-height: 44px; }
-    @keyframes alarm-flash { 0%{background-color:black;}50%{background-color:#660000;}100%{background-color:black;} }
-    @keyframes alarm-pulse { 0%{border-color:red;}50%{border-color:yellow;}100%{border-color:red;} }
-    #videoContainer { display: none; margin-top: 10px; border: 2px solid gold; border-radius: 8px;
-      overflow: hidden; max-width: 320px; }
-    #videoPlayer { width: 100%; display: block; }
-    #pipBtn { margin-top: 8px; }
-    input[type="range"] { -webkit-appearance: none; appearance: none; height: 8px; background: #222;
-      border: 1px solid gold; border-radius: 5px; outline: none; cursor: pointer; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
-      width: 20px; height: 20px; background: gold; border: 2px solid black; border-radius: 50%; cursor: pointer; }
-    input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: gold; border: 2px solid black; border-radius: 50%; cursor: pointer; }
-    input[type="checkbox"] { -webkit-appearance: none; -moz-appearance: none; appearance: none;
-      width: 20px; height: 20px; border: 2px solid gold; background: black; border-radius: 3px;
-      cursor: pointer; position: relative; vertical-align: middle; flex-shrink: 0; }
-    input[type="checkbox"]:checked { background: gold; }
-    input[type="checkbox"]:checked::after { content: '✓'; position: absolute; color: black;
-      font-size: 14px; font-weight: bold; top: -1px; left: 2px; }
-    input[type="time"] { background: black; color: gold; border: 2px solid gold; padding: 6px 10px;
-      border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;
-      -webkit-appearance: none; min-height: 38px; }
-    input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-    input[type="time"]::-webkit-datetime-edit { color: gold; }
-    input[type="time"]::-webkit-datetime-edit-fields-wrapper { background: black; }
-    input[type="time"]::-webkit-datetime-edit-text { color: gold; }
-    input[type="time"]::-webkit-datetime-edit-hour-field,
-    input[type="time"]::-webkit-datetime-edit-minute-field,
-    input[type="time"]::-webkit-datetime-edit-ampm-field { color: gold; background: black; }
-    input[type="time"]::-webkit-datetime-edit-hour-field:focus,
-    input[type="time"]::-webkit-datetime-edit-minute-field:focus,
-    input[type="time"]::-webkit-datetime-edit-ampm-field:focus { background: gold; color: black; }
-    ::-webkit-scrollbar { display: none; }
-    * { scrollbar-width: none; -ms-overflow-style: none; }
-    #vizWrapper { display: none; margin-bottom: 14px; }
-    .viz-label { font-size: 11px; color: rgba(255,215,0,0.5); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
-    #visualizerCanvas { width: 100%; height: 90px; display: block; background: #000; border: 1px solid gold; border-radius: 6px; }
-    .slider-grid { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
-    .slider-col { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
-    .slider-col label { font-size: 13px; color: gold; font-weight: bold; letter-spacing: 0.5px; }
-    .slider-row { display: flex; align-items: center; gap: 10px; }
-    .slider-row input[type="range"] { width: 160px; }
-    .slider-val { font-size: 13px; color: gold; min-width: 70px; }
-    #searchInput { background: #111; color: gold; border: 1px solid rgba(255,215,0,0.4); border-radius: 6px;
-      padding: 6px 10px; font-size: 13px; flex: 1; outline: none; min-height: 34px; transition: border-color 0.2s; }
-    #searchInput:focus { border-color: gold; border-width: 2px; }
-    #searchInput::placeholder { color: rgba(255,215,0,0.3); }
-    #searchClear { background: #1a1a1a; color: rgba(255,215,0,0.3); border: 1px solid rgba(255,215,0,0.15);
-      border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 12px; white-space: nowrap;
-      display: inline-block; line-height: 1; min-height: 34px; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-    #searchClear:hover { background: rgba(255,215,0,0.12); color: gold; border-color: rgba(255,215,0,0.4); }
-    #searchClear.has-query { color: rgba(255,215,0,0.85); border-color: rgba(255,215,0,0.45); }
-    #searchCount { font-size: 11px; color: rgba(255,215,0,0.45); white-space: nowrap; min-width: 48px; text-align: right; }
-    #scopeSelect { position: relative; flex-shrink: 0; }
-    #scopeTrigger { background: #111; color: gold; border: 1px solid rgba(255,215,0,0.4); border-radius: 6px;
-      padding: 5px 8px; font-size: 11px; cursor: pointer; min-height: 34px; white-space: nowrap;
-      display: flex; align-items: center; gap: 5px; font-family: inherit; }
-    #scopeTrigger:hover, #scopeTrigger.open { border-color: gold; }
-    #scopeTrigger .scope-arrow { font-size: 9px; opacity: 0.7; }
-    #scopeMenu { position: absolute; top: calc(100% + 4px); right: 0; background: #111;
-      border: 1px solid gold; border-radius: 6px; min-width: 100%; z-index: 20; overflow: hidden;
-      display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    #scopeMenu.open { display: block; }
-    #scopeMenu .scope-option { padding: 6px 10px; font-size: 11px; color: gold; white-space: nowrap; cursor: pointer; }
-    #scopeMenu .scope-option:hover, #scopeMenu .scope-option.active { background: gold; color: black; }
-    @media (pointer: coarse) { #scopeSelect { display: none !important; } }
-    .star-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 0 3px;
-      line-height: 1; flex-shrink: 0; color: gold; opacity: 0.5; touch-action: manipulation; }
-    .star-btn:hover { opacity: 0.85; }
-    .star-btn.favorited { opacity: 1; }
-    #playlistStats {
-      display: none; align-items: center; gap: 0;
-      background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.25);
-      border-radius: 6px; padding: 3px 10px; font-size: 11px; color: rgba(255,215,0,0.7); flex-shrink: 0;
-    }
-    #playlistStats .ps-item { display: flex; flex-direction: column; align-items: center; padding: 0 6px; border-right: 1px solid rgba(255,215,0,0.15); }
-    #playlistStats .ps-item:last-child { border-right: none; }
-    #playlistStats .ps-label { font-size: 9px; color: rgba(255,215,0,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
-    #playlistStats .ps-val { font-size: 12px; color: gold; font-weight: bold; }
-    #playlistStats .ps-loading { color: rgba(255,215,0,0.3); font-style: italic; font-size: 10px; }
-    #compatHintInline { font-size: 11px; color: gold; opacity: 0.4; white-space: nowrap; letter-spacing: 0.4px;
-      transition: opacity 0.4s ease; pointer-events: none; padding-left: 8px; }
-    #compatHintInline.hidden { opacity: 0; width: 0; padding-left: 0; overflow: hidden; }
-    .track-item.search-hidden { display: none; }
-    .track-left { min-width: 0; }
-    .track-thumb { height: 36px; width: auto; min-width: 36px; max-width: 80px;
-      border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(255,215,0,0.25); background: #111;
-      display: flex; align-items: center; justify-content: center; overflow: hidden; margin-right: 4px; }
-    .track-thumb img { height: 36px; width: auto; max-width: 80px; display: block; }
-    .track-thumb-icon { font-size: 18px; line-height: 1; padding: 0 8px; }
-    .playlist-empty { display: flex; flex-direction: column; align-items: center; justify-content: center;
-      height: 100%; min-height: 200px; gap: 10px;
-      color: rgba(255,215,0,0.35); text-align: center; padding: 20px;
-      pointer-events: none; user-select: none; }
-    .playlist-empty-icon { font-size: 48px; opacity: 0.5; }
-    .playlist-empty-title { font-size: 15px; font-weight: bold; letter-spacing: 1px; color: rgba(255,215,0,0.5); }
-    .playlist-empty-sub { font-size: 12px; color: rgba(255,215,0,0.3); line-height: 1.6; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-</head>
-<body>
-  <div id="clock"><span id="clockMain"></span><span id="clockSec"></span><span id="clockAmpm"></span><span id="clockDate"></span></div>
-
-  <!-- ================================================================= -->
-  <!-- START: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON (DO NOT DELETE) -->
-  <!-- ================================================================= -->
-  <style>
-    #imp-exe-banner {
-      display: inline-block !important;
-      margin-left: 6px !important;
-      margin-bottom: 12px !important;
-      background: rgba(0, 0, 0, 0.95) !important;
-      border: 2px solid #FFD700 !important;
-      padding: 7px 14px !important;
-      border-radius: 6px !important;
-      font-family: sans-serif !important;
-      font-size: 12px !important;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
-      transition: all 0.25s ease-in-out !important;
-    }
-    #imp-exe-banner:hover {
-      box-shadow: 0 0 22px #FFD700, 0 4px 15px rgba(0,0,0,0.7) !important;
-      border-color: #FFD700 !important;
-      transform: scale(1.02);
-    }
-    #imp-exe-banner a, #imp-exe-banner a:visited, #imp-exe-banner a:hover, #imp-exe-banner a:active {
-      color: #FFD700 !important;
-      text-decoration: underline !important;
-      font-weight: bold !important;
-    }
-  </style>
-  <div id="imp-exe-banner">
-    <a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank">
-      Install Inflated (.EXE) Now with atomic memory! (Latest: 10/18/26)
-    </a>
-  </div>
-  <!-- ================================================================= -->
-  <!-- END: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON -->
-  <!-- ================================================================= -->
-
-  <h1>Inflated Media Player</h1>
     *, *::before, *::after { box-sizing: border-box; }
     html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
     body { background-color: black; color: gold; font-family: sans-serif;
@@ -349,6 +181,9 @@
       line-height: 1; flex-shrink: 0; color: gold; opacity: 0.5; touch-action: manipulation; }
     .star-btn:hover { opacity: 0.85; }
     .star-btn.favorited { opacity: 1; }
+    .new-tag { color: gold; font-size: 11px; font-weight: bold; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.3px; }
+    #queueModeStatus { position: absolute; top: 62px; right: 20px; font-size: 11px; color: rgba(255,215,0,0.6); white-space: nowrap; letter-spacing: 0.3px; pointer-events: none; }
+    @media (max-width: 700px) { #queueModeStatus { display: none; } }
     #playlistStats {
       display: none; align-items: center; gap: 0;
       background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.25);
@@ -576,6 +411,7 @@
 <body>
   <div id="clock"><span id="clockMain"></span><span id="clockSec"></span><span id="clockAmpm"></span><span id="clockDate"></span></div>
   <h1>Inflated Media Player</h1>
+  <div id="queueModeStatus"></div>
   <div id="alarmControls"><h2>ALARM ACTIVE</h2><button id="stopAlarmBtn">STOP ALARM</button></div>
   <div id="fixedAlarmControls"><h3 style="color:white;margin:0 0 10px 0;">ALARM</h3><button id="fixedStopAlarmBtn">STOP ALARM</button></div>
 
@@ -598,7 +434,6 @@
     <button id="skipBtn">Skip</button>
     <button id="prevBtn">Previous</button>
     <button id="randomPauseBtn" class="toggle-btn">Random Pauses</button>
-    <button id="autoPipBtn"     class="toggle-btn">Auto PIP</button>
     <button id="loopBtn"        class="toggle-btn">Loop</button>
     <button id="visualizerBtn"  class="toggle-btn">Visualizer</button>
     <button id="subfoldersBtn"  class="toggle-btn">Subfolders</button>
@@ -612,11 +447,12 @@
     <input type="text" id="searchInput" placeholder="Search tracks or lyrics…" autocomplete="off" spellcheck="false" />
     <button id="searchClear">✕</button>
     <span id="searchCount"></span>
-    <div id="scopeSelect" title="Search by file name, lyrics, or both">
+    <div id="scopeSelect" title="Choose what the search looks at: name, artist, lyrics, or all">
       <button type="button" id="scopeTrigger"><span id="scopeLabel">Name</span><span class="scope-arrow">▾</span></button>
       <div id="scopeMenu">
-        <div class="scope-option" data-value="both">Both</div>
+        <div class="scope-option" data-value="all">All</div>
         <div class="scope-option" data-value="name">Name</div>
+        <div class="scope-option" data-value="artist">Artist</div>
         <div class="scope-option" data-value="lyrics">Lyrics</div>
       </div>
     </div>
@@ -726,10 +562,12 @@
       <div><span style="color:gold;font-weight:bold;">↑ ↓</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume ±5%</span></div>
     </div>
     <h4 style="margin-top:18px;">▶️ Song Queue</h4>
-    <p><strong>Queue</strong> on a track plays it next. Queue a few in a row and the <em>last</em> one you queued plays first — first one you queued plays last — so the most recent thing you wanted to hear jumps to the front. Once a queued song starts, it's off the queue. When the queue runs empty, normal playback just continues on from wherever that last queued song was in the list. Click a queued track's button again to remove just that one.</p>
-    <p><strong>Double-click</strong> any Queue button to clear the whole queue at once.</p>
+    <p>Current queue order: <strong id="queueModeDisplay">LIFO (Last-In, First-Out)</strong> (also shown under the clock). <strong>Triple-click</strong> any Queue button, fast, to switch between the two orders. Your choice is remembered.</p>
+    <p><strong>LIFO (Last-In, First-Out)</strong> — the default. The <em>last</em> song you queued plays first and the first one you queued plays last, so the most recent thing you wanted to hear jumps to the front.</p>
+    <p><strong>FIFO (First-In, First-Out)</strong> — songs play in the order you queued them: first queued plays first, last queued plays last.</p>
+    <p>Either way: once a queued song starts, it's off the queue. When the queue runs empty, normal playback just continues on from wherever that last queued song was in the list. Click a queued track's button once to add or remove just that song, and <strong>double-click</strong> any Queue button to clear the whole queue at once.</p>
     <h4 style="margin-top:18px;">🔎 Search Modes</h4>
-    <p>The small dropdown next to the search bar (desktop only) controls what your search actually looks at: <strong>Name</strong> matches file names only, <strong>Lyrics</strong> matches lyrics text only, and <strong>Both</strong> checks either. It remembers whatever you last picked. If you don't have any matching lyrics <code>.txt</code> files loaded, Lyrics and Both won't find anything extra beyond what Name already would — that's expected, not a bug.</p>
+    <p>The small dropdown next to the search bar (desktop only) controls what your search actually looks at: <strong>Name</strong> matches file names only, <strong>Artist</strong> matches the creator (the artist tag and the artist folder), <strong>Lyrics</strong> matches lyrics text only, and <strong>All</strong> checks names, artists, albums and lyrics together. It remembers whatever you last picked. If you don't have any matching lyrics <code>.txt</code> files loaded, Lyrics and Both won't find anything extra beyond what Name already would — that's expected, not a bug.</p>
     <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
     <p>Name any .mp3/.mp4 file <strong>Add_Alarm</strong> and upload it with your music. Multiple variants work: Add_Alarm.mp3, Add_Alarm(1).mp3, etc.</p>
     <div id="customAlarmInfo" style="margin-top:8px;font-size:12px;color:rgba(255,215,0,0.65);"></div>
@@ -757,7 +595,6 @@
     const shuffleBtn         = document.getElementById('shuffleBtn');
     const skipBtn            = document.getElementById('skipBtn');
     const randomPauseBtn     = document.getElementById('randomPauseBtn');
-    const autoPipBtn         = document.getElementById('autoPipBtn');
     const loopBtn            = document.getElementById('loopBtn');
     const visualizerBtn      = document.getElementById('visualizerBtn');
     const subfoldersBtn      = document.getElementById('subfoldersBtn');
@@ -792,17 +629,33 @@
 
     let playlist = [], currentTrackIndex = -1, currentTrack = null, currentMediaElement = null;
     let isLoadingFolder = false;
-    // "Play next" stack: last one queued plays first (pop from the end), and it comes off the
-    // stack the moment it starts playing. Once the stack runs dry, normal playback just resumes
-    // from wherever that last-played queued track sat in the list (see playNextTrack()).
+    // "Play next" queue. LIFO (the default) plays the most recently queued song first; FIFO
+    // plays them in the order you queued them. Either way a song comes off the queue the moment
+    // it starts playing, and once the queue runs dry, normal playback just resumes from wherever
+    // that last queued song sat in the list (see playNextTrack()). Triple-click any Queue button
+    // to flip between the two — the choice is saved so it sticks between sessions.
     let playQueue = [];
+    let queueMode = 'lifo';
+    try { const m = localStorage.getItem('impQueueMode'); if (m==='fifo'||m==='lifo') queueMode = m; } catch(e) {}
+    function queueModeLabel(){ return queueMode==='fifo' ? 'FIFO (First-In, First-Out)' : 'LIFO (Last-In, First-Out)'; }
+    const THREE_DAYS_MS = 3*24*60*60*1000;
     // What actually played, in order — so Previous can undo a queue-jump or a manual click
     // elsewhere in the list, not just step back one slot in list order.
     let playHistory = [];
+    // Playback-recovery bookkeeping (see recoverStalledMedia below)
+    let lastToggleAt = 0, pendingResumeTime = 0, recovering = false;
     // Favorites: purely a visual marker the user sets per track, persisted across sessions.
     // Not used by search, filtering, or playback order in any way.
     let favorites = new Set();
     try { favorites = new Set(JSON.parse(localStorage.getItem('impFavorites')||'[]')); } catch(e) {}
+    function isNewFile(file){
+      const created = file.birthtimeMs || file.lastModified || 0;
+      return !!created && (Date.now() - created) < THREE_DAYS_MS;
+    }
+    function refreshNewTags(){
+      document.querySelectorAll('.new-tag').forEach(t => { if (t._file) t.style.display = isNewFile(t._file) ? '' : 'none'; });
+    }
+    setInterval(refreshNewTags, 30*60*1000); // a tag drops off by itself once its song passes 3 days old
     function isFavorited(file){ return favorites.has(file.name); }
     function toggleFavorite(file){
       if(favorites.has(file.name)) favorites.delete(file.name); else favorites.add(file.name);
@@ -812,14 +665,32 @@
     function queueLabelFor(file){
       const qi = playQueue.indexOf(file);
       if (qi===-1) return '➕ Queue';
-      return `▶ Queued #${playQueue.length-qi}`;
+      const order = queueMode==='fifo' ? (qi+1) : (playQueue.length-qi); // #1 = plays next
+      return `▶ Queued #${order}`;
+    }
+    function queueBtnTitle(){
+      return `Click: play this song next (click again to remove it). Double-click: clear the whole queue. Triple-click: switch queue order (now ${queueModeLabel()}).`;
     }
     function refreshQueueButtons(){
       queueBtnMap.forEach((btn,file)=>{
         btn.textContent = queueLabelFor(file);
         btn.classList.toggle('queued', playQueue.includes(file));
+        btn.title = queueBtnTitle();
       });
     }
+    function updateQueueModeStatus(){
+      const el = document.getElementById('queueModeStatus');
+      if (el) el.textContent = `Current Queue Playback: ${queueModeLabel()}`;
+      const info = document.getElementById('queueModeDisplay');
+      if (info) info.textContent = queueModeLabel();
+    }
+    function setQueueMode(mode){
+      queueMode = mode;
+      try { localStorage.setItem('impQueueMode', mode); } catch(e) {}
+      refreshQueueButtons();
+      updateQueueModeStatus();
+    }
+    updateQueueModeStatus();
     // Bumped every time updatePlaylistDisplay() is (re)called. Each running call captures its own
     // number and checks it after every await; if a newer call has since started, the older one
     // stops touching the DOM instead of racing the newer one and interleaving duplicate rows.
@@ -835,7 +706,7 @@
     }
     let trackEndTimeout = null, timerInterval = null, pauseInterval = null, isPaused = false;
     let alarmSettings = [], alarmTimeout = null, alarmIdCounter = 0;
-    let isRandomPauseEnabled = false, isAutoPipEnabled = false;
+    let isRandomPauseEnabled = false;
     let isLoopEnabled = false, isVisualizerEnabled = false;
     let filterMode = 'all';
     let currentRandomPause = null, randomPauseTimer = null;
@@ -1057,6 +928,7 @@
     // metadata line. Anything that can't be found simply comes back null and is skipped by the caller
     // so the line always shows whatever it does have instead of a placeholder.
     function getDisplayMeta(file) {
+      if (file.extraMeta) return Promise.resolve(file.extraMeta);
       return readTags(file).then(tags => {
         const sizeStr = formatFileSize(file.size);
         let bitrateStr = null;
@@ -1065,7 +937,9 @@
           const kbps = Math.round((file.size*8)/durSec/1000);
           if (kbps>0 && isFinite(kbps)) bitrateStr = kbps+' kbps';
         }
-        return { album: tags.album, artist: tags.artist, year: tags.year, sizeStr, bitrateStr };
+        const extra = { album: tags.album, artist: tags.artist, year: tags.year, sizeStr, bitrateStr };
+        file.extraMeta = extra;
+        return extra;
       });
     }
 
@@ -1189,27 +1063,37 @@
         const queueBtn=document.createElement('button'); queueBtn.className='queue-btn';
         queueBtn.textContent=queueLabelFor(file);
         if(playQueue.includes(file)) queueBtn.classList.add('queued');
-        queueBtn.title='Click: play this song next (click again to remove it). Double-click: clear the whole queue.';
-        let queueClickTimer=null;
+        queueBtn.title=queueBtnTitle();
+        // One click adds/removes this song, two clears the whole queue, three flips the queue
+        // order (LIFO <-> FIFO). Clicks are counted inside a short window so each gesture is
+        // recognised on its own and the double-click "clear all" can't be set off by accident.
+        let queueClickCount=0, queueClickTimer=null;
         queueBtn.addEventListener('click',(e)=>{
           e.stopPropagation();
-          if(queueClickTimer) return; // this is the 2nd click of a double-click — dblclick handles it
+          queueClickCount++;
+          if(queueClickTimer) clearTimeout(queueClickTimer);
           queueClickTimer=setTimeout(()=>{
-            queueClickTimer=null;
-            const qi=playQueue.indexOf(file);
-            if(qi!==-1) playQueue.splice(qi,1); else playQueue.push(file);
-            refreshQueueButtons();
-          },280);
-        });
-        queueBtn.addEventListener('dblclick',(e)=>{
-          e.stopPropagation();
-          if(queueClickTimer){clearTimeout(queueClickTimer);queueClickTimer=null;}
-          playQueue.length=0;
-          refreshQueueButtons();
+            const n=queueClickCount; queueClickCount=0; queueClickTimer=null;
+            if(n===1){
+              const qi=playQueue.indexOf(file);
+              if(qi!==-1) playQueue.splice(qi,1); else playQueue.push(file);
+              refreshQueueButtons();
+            } else if(n===2){
+              playQueue.length=0;
+              refreshQueueButtons();
+            } else {
+              setQueueMode(queueMode==='fifo'?'lifo':'fifo');
+            }
+          },320);
         });
         queueBtnMap.set(file,queueBtn);
+        // "New" = added to the library in the last 3 days. Plain gold text (not a button), sits
+        // just left of the star. Creation date where the app can see it, else last-modified.
+        const newTag=document.createElement('span'); newTag.className='new-tag'; newTag.textContent='New';
+        newTag._file=file;
+        newTag.style.display = isNewFile(file) ? '' : 'none';
         const actions=document.createElement('div'); actions.className='track-actions';
-        actions.appendChild(starBtn); actions.appendChild(queueBtn); actions.appendChild(removeBtn);
+        actions.appendChild(newTag); actions.appendChild(starBtn); actions.appendChild(queueBtn); actions.appendChild(removeBtn);
         trackItem.appendChild(left); trackItem.appendChild(actions);
         trackItem.addEventListener('click',()=>playSpecificTrack(index));
         setupDragEvents(trackItem);
@@ -1336,12 +1220,13 @@
           elem.play().then(()=>{
             isPaused=false;
             nowPlaying.textContent=file.name;
+            if(pendingResumeTime>0){ // a stalled-playback recovery reloaded this track: jump back to where it was
+              try{ if(isFinite(elem.duration)) elem.currentTime=Math.min(pendingResumeTime,Math.max(0,elem.duration-0.5)); }catch(e){}
+              pendingResumeTime=0;
+            }
+            recovering=false;
             if(window._lyricsOnTrackStart) window._lyricsOnTrackStart(file.name);
             updateTimer(); updatePlayPauseButton(); updatePlaylistDisplay();
-            if(isVid&&isAutoPipEnabled) setTimeout(()=>{
-              if(document.pictureInPictureEnabled&&!document.pictureInPictureElement)
-                video.requestPictureInPicture().catch(()=>{});
-            },500);
           }).catch(err=>{console.error("Error playing:",err);nowPlaying.textContent="Error: "+file.name;updatePlayPauseButton();});
         }
         elem.oncanplaythrough=onReady; elem.oncanplay=onReady;
@@ -1371,12 +1256,13 @@
       if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
       stopAllMedia();
       if(!playlist.length){nowPlaying.textContent="No tracks available";updatePlayPauseButton();return;}
-      // Queued songs take priority over the normal order — last one queued plays first, and it
-      // comes off the queue the moment it starts. Once the queue runs dry, playback just
-      // continues on from wherever that last queued song sat in the list (currentTrackIndex
-      // already points there, since playSpecificTrack() sets it for queued tracks too).
+      // Queued songs take priority over the normal order. LIFO plays the most recently queued
+      // one first, FIFO plays the earliest queued one first; either way it comes off the queue
+      // the moment it starts. Once the queue runs dry, playback just continues on from wherever
+      // that last queued song sat in the list (currentTrackIndex already points there, since
+      // playSpecificTrack() sets it for queued tracks too).
       while (playQueue.length) {
-        const queuedFile = playQueue.pop();
+        const queuedFile = queueMode==='fifo' ? playQueue.shift() : playQueue.pop();
         const qIdx = playlist.indexOf(queuedFile);
         if (qIdx !== -1) { refreshQueueButtons(); playSpecificTrack(qIdx); return; }
         // that file was removed from the playlist since being queued — skip it, try the next one
@@ -1441,9 +1327,27 @@
     // arriving in that gap (a fast second keypress, a stray duplicate click, etc.) still sees the old
     // isPaused value, calls pause() on a play() that hasn't resolved yet, and that abort is what makes
     // playback visibly start for a moment and then immediately stop.
-    let playPauseBusy=false;
+    // This used to be a flag held until elem.play()'s promise settled. If that promise never
+    // settled (a media pipeline that got wedged after switching tabs on a playing mp4), the flag
+    // stayed set forever and every play/pause input was ignored until a different song was
+    // loaded. It's now only a short time-based debounce, so nothing can get stuck.
+    // The 3-second watchdog below handles the wedged-pipeline case itself.
+    function recoverStalledMedia(){
+      if(recovering||!currentTrack) return;
+      const idx=playlist.indexOf(currentTrack); if(idx<0) return;
+      const elem=currentMediaElement||audio;
+      recovering=true;
+      pendingResumeTime=elem.currentTime||0;
+      // Same reload path that loading a different song takes — the thing that was already
+      // known to clear this state — but it lands back on the position it was at.
+      playSpecificTrack(idx,true);
+      setTimeout(()=>{ recovering=false; },8000);
+    }
     playPauseBtn.onclick=()=>{
-      if(isAlarmActive||playPauseBusy) return;
+      if(isAlarmActive) return;
+      const nowTs=Date.now();
+      if(nowTs-lastToggleAt<200) return; // swallow key-repeat / accidental double events
+      lastToggleAt=nowTs;
       if(currentRandomPause){
         if(randomPauseTimer){clearTimeout(randomPauseTimer);randomPauseTimer=null;}
         if(pauseInterval){clearInterval(pauseInterval);pauseInterval=null;}
@@ -1459,15 +1363,16 @@
       // play/pause button can land inside that gap and read a stale isPaused, which is what was
       // toggling the wrong direction (or immediately undoing itself) a moment later.
       if(elem.paused){
-        playPauseBusy=true;
-        elem.play().then(()=>{isPaused=false;nowPlaying.textContent=currentTrack?currentTrack.name:'';updatePlayPauseButton();})
+        let settled=false;
+        const stallTimer=setTimeout(()=>{ if(!settled) recoverStalledMedia(); },3000);
+        elem.play().then(()=>{settled=true;clearTimeout(stallTimer);isPaused=false;nowPlaying.textContent=currentTrack?currentTrack.name:'';updatePlayPauseButton();})
             .catch((err)=>{
+              settled=true; clearTimeout(stallTimer);
               // AbortError here just means our own pause() interrupted this same play() call
               // (e.g. a rapid second toggle) — that's not a broken file, so don't skip the track.
               if(err&&err.name==='AbortError'){updatePlayPauseButton();return;}
               playNextTrack();
-            })
-            .finally(()=>{playPauseBusy=false;});
+            });
       } else {
         elem.pause(); isPaused=true;
         nowPlaying.textContent=currentTrack?currentTrack.name+' (Paused)':'None';
@@ -1511,11 +1416,27 @@
       };
     }
 
+    // True only for things you actually type into (search box, time field, a dropdown...).
+    // Sliders and checkboxes are <input> tags too but take no typed text, so they must NOT count:
+    // when they did, Space pressed while a slider still had focus fell through to the browser
+    // and scrolled the page up/down instead of playing or pausing.
+    function isTypingTarget(t){
+      if(!t||!t.tagName) return false;
+      const tag=t.tagName;
+      if(tag==='TEXTAREA'||tag==='SELECT'||t.isContentEditable) return true;
+      if(tag==='INPUT') return !['range','checkbox','radio','button','submit','reset','color','file','image'].includes((t.type||'').toLowerCase());
+      return false;
+    }
     const isTouch=window.matchMedia('(pointer: coarse)').matches;
     if(!isTouch){
       let kbMuted=false,kbPreMuteVol=100;
+      // Belt and braces: whatever has focus, Space never scrolls the page (capture phase, so it
+      // runs first and can't be skipped by anything else stopping the event).
+      window.addEventListener('keydown',(e)=>{ if(e.key===' '&&!isTypingTarget(e.target)) e.preventDefault(); },true);
       document.addEventListener('keydown',(e)=>{
-        if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+        if(isTypingTarget(e.target)) return;
+        // A focused slider/checkbox keeps its own arrow-key behaviour; only Space is ours.
+        if(e.target.tagName==='INPUT'&&e.key!==' ') return;
         const elem=currentMediaElement||audio;
         switch(e.key){
           case ' ':e.preventDefault();if(!e.repeat)playPauseBtn.click();break;
@@ -1539,10 +1460,26 @@
       // keyup and immediately reverses it. Capture phase, so this runs before the video's own
       // internal handling gets a chance to act on the key release at all.
       document.addEventListener('keyup',(e)=>{
-        if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+        if(isTypingTarget(e.target)) return;
         if(e.key===' ') e.preventDefault();
       },true);
     }
+
+    // Coming back to the tab/window: re-sync the button with what the media element is really
+    // doing, and if it claims to be playing but the clock hasn't moved (a pipeline that got
+    // wedged while the tab was in the background), reload it in place instead of leaving the
+    // player soft-locked.
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden||!currentTrack||isAlarmActive||currentRandomPause) return;
+      const elem=currentMediaElement||audio;
+      isPaused=elem.paused; updatePlayPauseButton();
+      if(!elem.paused&&!elem.ended){
+        const t0=elem.currentTime;
+        setTimeout(()=>{
+          if((currentMediaElement||audio)===elem&&!elem.paused&&!elem.seeking&&!elem.ended&&elem.currentTime===t0) recoverStalledMedia();
+        },2500);
+      }
+    });
 
     shuffleBtn.addEventListener('click',()=>{ shuffleArray(); updatePlaylistDisplay(); });
     function shuffleArray(){
@@ -1559,10 +1496,6 @@
         isLoopEnabled=false; loopBtn.classList.remove('active');
         if(currentMediaElement) currentMediaElement.loop=false;
       }
-    });
-    autoPipBtn.addEventListener('click',()=>{
-      isAutoPipEnabled=!isAutoPipEnabled;
-      autoPipBtn.classList.toggle('active',isAutoPipEnabled);
     });
     loopBtn.addEventListener('click',()=>{
       isLoopEnabled=!isLoopEnabled;
@@ -1593,69 +1526,302 @@
       subfoldersBtn.classList.toggle('active',show);
     });
 
-    // ── PIP Console: a small always-on-top remote (Prev/Play/Skip/Shuffle/±5s) that stays
-    // visible while working in another tab, using the Document Picture-in-Picture API. It runs
-    // in the same JS realm as this page (not an iframe), so its buttons just call the existing
-    // controls directly instead of needing any message-passing. Chromium-only (Chrome/Edge 116+);
-    // the button stays hidden everywhere else instead of offering something that can't work.
-    let pipConsoleWindow = null;
-    if ('documentPictureInPicture' in window) {
-      pipConsoleBtn.style.display = '';
-      pipConsoleBtn.addEventListener('click', async () => {
-        if (pipConsoleWindow) { pipConsoleWindow.focus(); return; }
-        let win;
-        try { win = await documentPictureInPicture.requestWindow({ width: 336, height: 150 }); }
-        catch(e) { console.warn('PIP Console unavailable:', e); return; }
-        pipConsoleWindow = win;
-        win.document.head.insertAdjacentHTML('beforeend', `<style>
-          *{box-sizing:border-box;}
-          html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;}
-          body{font-family:sans-serif;user-select:none;}
-          #pcStatus{color:gold;text-align:center;padding:8px 10px;font-weight:bold;font-size:13px;
-            line-height:1.3;border-bottom:1px solid gold;display:-webkit-box;-webkit-box-orient:vertical;
-            -webkit-line-clamp:2;overflow:hidden;}
-          #pcGrid{display:flex;gap:6px;padding:8px 10px;}
-          #pcGrid button{background:yellow;color:black;border:none;border-radius:8px;font-weight:bold;
-            cursor:pointer;flex:1 1 0;min-width:0;height:46px;font-size:12px;}
-          #pcGrid button:active{opacity:.75;}
-        </style>`);
-        win.document.body.innerHTML = `
-          <div id="pcStatus">${nowPlaying.textContent}</div>
-          <div id="pcGrid">
-            <button data-a="prev">⏮ Prev</button>
-            <button data-a="playpause">${playPauseBtn.textContent}</button>
-            <button data-a="skip">Skip ⏭</button>
-            <button data-a="shuffle">Shuffle</button>
-            <button data-a="rewind5">-5s</button>
-            <button data-a="forward5">+5s</button>
-          </div>`;
-        win.document.querySelectorAll('[data-a]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            switch (btn.dataset.a) {
-              case 'prev': if (prevBtn) prevBtn.click(); break;
-              case 'playpause': playPauseBtn.click(); break;
-              case 'skip': skipBtn.click(); break;
-              case 'shuffle': shuffleBtn.click(); break;
-              case 'rewind5': rewind5Btn.click(); break;
-              case 'forward5': forward5Btn.click(); break;
-            }
-          });
-        });
-        pipConsoleBtn.classList.add('active');
-        win.addEventListener('pagehide', () => {
-          pipConsoleWindow = null;
-          pipConsoleBtn.classList.remove('active');
-        });
+    // ── PIP Console ────────────────────────────────────────────────────────────
+    // A floating, always-on-top mini player built on the Document Picture-in-Picture API. The
+    // window shares this page's JavaScript (it isn't an iframe), so its buttons simply call the
+    // real controls. Chromium only (Chrome/Edge 116+); the button stays hidden everywhere else.
+    //   single click  -> toggle the modern console: artwork (or the live video) as the
+    //                    background, controls fade in on hover
+    //   double-click  -> toggle the classic console (see the easter egg note below)
+    let pipWin = null, pipMode = null, pipTimer = null, pipVideoHome = null;
+    let pipLastTrack = null, pipArtUrl = null, pipSeeking = false, pipPreMuteVol = 100;
+    const PIP_BASE_W = 400, PIP_BASE_H = 220;  // design size of the control layer
+    const PIP_MAX_SCALE = 1.5;                 // controls stop growing past this, however big the window gets
+
+    function pipFmt(sec){
+      if (!isFinite(sec) || sec < 0) sec = 0;
+      const m = Math.floor(sec/60), s = Math.floor(sec%60);
+      return m + ':' + String(s).padStart(2,'0');
+    }
+
+    // Counts rapid clicks on a PiP button: 1 click = single(), 2 clicks = single() twice,
+    // 3+ quick clicks = triple() (the "click 3x fast for Previous / Skip" gesture).
+    function pipClickGesture(btn, single, triple){
+      let n = 0, t = null;
+      btn.addEventListener('click', () => {
+        n++; clearTimeout(t);
+        t = setTimeout(() => {
+          const c = n; n = 0;
+          if (c >= 3) triple(); else for (let i = 0; i < c; i++) single();
+        }, 260);
       });
     }
-    function updatePipConsole(){
-      if (!pipConsoleWindow) return;
-      const st = pipConsoleWindow.document.getElementById('pcStatus');
+
+    function teardownPip(){
+      clearInterval(pipTimer); pipTimer = null;
+      // put the real <video> back where it lives on the page before its window goes away
+      if (pipVideoHome && video.parentNode !== pipVideoHome.parent) {
+        video.controls = true;
+        const next = (pipVideoHome.next && pipVideoHome.next.parentNode === pipVideoHome.parent) ? pipVideoHome.next : null;
+        pipVideoHome.parent.insertBefore(video, next);
+      }
+      pipVideoHome = null; pipWin = null; pipMode = null; pipLastTrack = null; pipArtUrl = null; pipSeeking = false;
+      pipConsoleBtn.classList.remove('active');
+    }
+    function closePip(){
+      const w = pipWin;
+      teardownPip();
+      try { if (w) w.close(); } catch(e) {}
+    }
+
+    const PIP_MODERN_CSS = `
+      *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+      html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;user-select:none;}
+      #stage{position:fixed;inset:0;background:#000;overflow:hidden;--s:1;}
+      #bgBlur{position:absolute;left:-10%;top:-10%;width:120%;height:120%;object-fit:cover;filter:blur(26px) brightness(.55);display:none;}
+      #art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;}
+      #noArt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;color:rgba(255,215,0,.3);}
+      #videoSlot{position:absolute;inset:0;display:none;background:#000;}
+      #videoSlot video{width:100%;height:100%;object-fit:contain;display:block;background:#000;}
+      #shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.4) 45%,rgba(0,0,0,.7));opacity:0;transition:opacity .18s;pointer-events:none;}
+      #stage:hover #shade{opacity:1;}
+      #hud{position:absolute;left:0;top:0;width:calc(100% / var(--s));transform:scale(var(--s));transform-origin:0 0;padding:10px 14px 18px;pointer-events:none;
+           background:linear-gradient(rgba(0,0,0,.65),rgba(0,0,0,0));text-shadow:0 1px 6px #000;}
+      #pTitle{color:gold;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      #pArtist{color:#ddd;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+      #ctl{position:absolute;left:50%;top:50%;width:${PIP_BASE_W}px;height:${PIP_BASE_H}px;margin:-${PIP_BASE_H/2}px 0 0 -${PIP_BASE_W/2}px;
+           transform:scale(var(--s));transform-origin:50% 50%;opacity:0;transition:opacity .18s;pointer-events:none;}
+      #stage:hover #ctl{opacity:1;pointer-events:auto;}
+      .ib{position:absolute;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:50%;cursor:pointer;color:#fff;background:rgba(0,0,0,.4);}
+      .ib:hover{color:gold;}
+      .ib svg{display:block;}
+      #bShuf{left:10px;top:10px;width:38px;height:38px;}
+      #vol{position:absolute;right:10px;top:10px;height:38px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.4);border-radius:19px;padding:0 14px 0 10px;color:#fff;}
+      #vIcon{cursor:pointer;display:flex;} #vIcon:hover{color:gold;}
+      #vRange{width:86px;accent-color:gold;cursor:pointer;}
+      .nav{position:absolute;top:70px;display:flex;flex-direction:column;align-items:center;gap:3px;}
+      .nav .ib{position:static;width:62px;height:62px;}
+      .nav .lbl{font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 4px #000;}
+      #navBack{left:30px;} #navFwd{right:30px;}
+      #bPlay{left:162px;top:64px;width:76px;height:76px;background:#fff;color:#000;}
+      #bPlay:hover{color:#000;background:gold;}
+      #prog{position:absolute;left:14px;right:14px;bottom:12px;height:38px;}
+      #times{display:flex;justify-content:space-between;font-size:11px;color:#fff;text-shadow:0 1px 4px #000;}
+      #bar{position:absolute;left:0;right:0;bottom:6px;height:5px;background:rgba(255,255,255,.3);border-radius:3px;overflow:hidden;}
+      #fill{height:100%;width:0;background:gold;}
+      #barHit{position:absolute;left:0;right:0;bottom:-2px;height:22px;cursor:pointer;touch-action:none;}
+    `;
+    const PIP_ICON = {
+      play:   '<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+      pause:  '<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+      back:   '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>',
+      fwd:    '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>',
+      shuf:   '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>',
+      vol:    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>'
+    };
+
+    async function openModernPip(){
+      let win;
+      try { win = await documentPictureInPicture.requestWindow({ width: 480, height: 270 }); }
+      catch(e) { console.warn('PIP Console unavailable:', e); return; }
+      pipWin = win; pipMode = 'modern';
+      const d = win.document;
+      d.head.insertAdjacentHTML('beforeend', '<style>' + PIP_MODERN_CSS + '</style>');
+      d.title = 'IMP Console';
+      d.body.innerHTML = `
+        <div id="stage">
+          <img id="bgBlur" alt=""><img id="art" alt=""><div id="noArt">🎵</div>
+          <div id="videoSlot"></div>
+          <div id="shade"></div>
+          <div id="hud"><div id="pTitle"></div><div id="pArtist"></div></div>
+          <div id="ctl">
+            <button class="ib" id="bShuf" title="Shuffle">${PIP_ICON.shuf}</button>
+            <div id="vol"><span id="vIcon" title="Mute / unmute">${PIP_ICON.vol}</span><input type="range" id="vRange" min="0" max="100" step="1"></div>
+            <div class="nav" id="navBack"><button class="ib" id="bBack" title="Back 5s &mdash; click 3x fast for Previous">${PIP_ICON.back}</button><span class="lbl">-5s</span></div>
+            <button class="ib" id="bPlay" title="Play / Pause">${PIP_ICON.play}</button>
+            <div class="nav" id="navFwd"><button class="ib" id="bFwd" title="Forward 5s &mdash; click 3x fast to Skip">${PIP_ICON.fwd}</button><span class="lbl">+5s</span></div>
+            <div id="prog"><div id="times"><span id="tCur">0:00</span><span id="tTot">0:00</span></div><div id="bar"><div id="fill"></div></div><div id="barHit"></div></div>
+          </div>
+        </div>`;
+      const q = id => d.getElementById(id);
+
+      q('bPlay').addEventListener('click', () => playPauseBtn.click());
+      q('bShuf').addEventListener('click', () => shuffleBtn.click());
+      pipClickGesture(q('bBack'), () => rewind5Btn.click(), () => { if (prevBtn) prevBtn.click(); });
+      pipClickGesture(q('bFwd'),  () => forward5Btn.click(), () => skipBtn.click());
+
+      const hit = q('barHit');
+      const seekFromEvent = ev => {
+        const elem = currentMediaElement || audio;
+        if (!elem.duration || isNaN(elem.duration)) return;
+        const r = hit.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+        elem.currentTime = Math.min(elem.duration * pct, Math.max(0, elem.duration - 0.25)); // never land on the very end
+        updateProgress(); updateModernPip();
+      };
+      hit.addEventListener('pointerdown', ev => { pipSeeking = true; try { hit.setPointerCapture(ev.pointerId); } catch(e) {} seekFromEvent(ev); });
+      hit.addEventListener('pointermove', ev => { if (pipSeeking) seekFromEvent(ev); });
+      const endSeek = () => { pipSeeking = false; };
+      hit.addEventListener('pointerup', endSeek); hit.addEventListener('pointercancel', endSeek);
+
+      q('vRange').addEventListener('input', ev => { volumeSlider.value = ev.target.value; applyVol(); });
+      q('vIcon').addEventListener('click', () => {
+        if (Number(volumeSlider.value) > 0) { pipPreMuteVol = Number(volumeSlider.value); volumeSlider.value = 0; }
+        else volumeSlider.value = pipPreMuteVol || 100;
+        applyVol(); updateModernPip();
+      });
+
+      d.addEventListener('keydown', ev => {
+        if (ev.key === ' ') { ev.preventDefault(); if (!ev.repeat) playPauseBtn.click(); }
+        else if (ev.key === 'ArrowRight') { ev.preventDefault(); forward5Btn.click(); }
+        else if (ev.key === 'ArrowLeft') { ev.preventDefault(); rewind5Btn.click(); }
+      });
+
+      // Scale the whole control layer with the window, but never past PIP_MAX_SCALE (so buttons
+      // don't balloon and long mouse trips aren't needed), and never past what fits (so nothing
+      // is cut off when the window gets small). The background art/video always fills the window.
+      const applyScale = () => {
+        const w = win.innerWidth || PIP_BASE_W, h = win.innerHeight || PIP_BASE_H;
+        const s = Math.min(Math.min(w / PIP_BASE_W, h / PIP_BASE_H), PIP_MAX_SCALE);
+        q('stage').style.setProperty('--s', s.toFixed(3));
+      };
+      win.addEventListener('resize', applyScale); applyScale();
+
+      win.addEventListener('pagehide', teardownPip);
+      pipConsoleBtn.classList.add('active');
+      pipTimer = setInterval(tickPip, 250);
+      updateModernPip();
+    }
+
+    function refreshPipTrackInfo(){
+      if (!pipWin) return;
+      const d = pipWin.document, track = pipLastTrack;
+      d.getElementById('pTitle').textContent = track ? track.name.replace(/\.[^.]+$/, '') : 'Nothing playing';
+      d.getElementById('pArtist').textContent = '';
+      pipArtUrl = null;
+      if (!track) return;
+      getDisplayMeta(track).then(extra => {
+        if (track !== pipLastTrack || !pipWin) return;
+        const artist = extra.artist || (track.metadata && track.metadata.artist !== 'Unknown Artist' ? track.metadata.artist : '');
+        pipWin.document.getElementById('pArtist').textContent = artist || '';
+      });
+      generateThumb(track).then(url => { if (track === pipLastTrack && pipWin) pipArtUrl = url || null; });
+    }
+
+    function updateModernPip(){
+      if (!pipWin || pipMode !== 'modern') return;
+      const d = pipWin.document, q = id => d.getElementById(id);
+      const elem = currentMediaElement || audio;
+      const isVid = !!currentTrack && currentTrack.name.toLowerCase().endsWith('.mp4') && elem === video;
+      if (currentTrack !== pipLastTrack) { pipLastTrack = currentTrack; refreshPipTrackInfo(); }
+
+      // video: borrow the page's real <video> element so it keeps playing, with no second copy
+      const slot = q('videoSlot');
+      if (isVid) {
+        if (video.parentNode !== slot) {
+          if (!pipVideoHome) pipVideoHome = { parent: video.parentNode, next: video.nextSibling };
+          video.controls = false;
+          slot.appendChild(video);
+        }
+        slot.style.display = 'block';
+      } else slot.style.display = 'none';
+
+      const showArt = !isVid && !!pipArtUrl;
+      if (showArt && q('art').getAttribute('src') !== pipArtUrl) { q('art').src = pipArtUrl; q('bgBlur').src = pipArtUrl; }
+      q('art').style.display = showArt ? 'block' : 'none';
+      q('bgBlur').style.display = showArt ? 'block' : 'none';
+      q('noArt').style.display = (!isVid && !showArt) ? 'flex' : 'none';
+
+      q('bPlay').innerHTML = (elem.paused || !currentTrack) ? PIP_ICON.play : PIP_ICON.pause;
+      const dur = elem.duration;
+      if (!pipSeeking) {
+        const ok = dur && isFinite(dur);
+        q('fill').style.width = ok ? (Math.min(1, elem.currentTime / dur) * 100) + '%' : '0%';
+        q('tCur').textContent = pipFmt(elem.currentTime);
+        q('tTot').textContent = ok ? pipFmt(dur) : '0:00';
+      }
+      const vr = q('vRange');
+      if (d.activeElement !== vr) vr.value = volumeSlider.value;
+    }
+
+    // EASTER EGG / TRIBUTE FEATURE: Legacy PiP Console toggle (Not a bug)
+    // Double-clicking the "PIP Console" button opens the original six-button console this
+    // player launched with, kept alive as a little nod to where it all started.
+    async function openClassicPip(){
+      let win;
+      try { win = await documentPictureInPicture.requestWindow({ width: 336, height: 150 }); }
+      catch(e) { console.warn('PIP Console unavailable:', e); return; }
+      pipWin = win; pipMode = 'classic';
+      win.document.head.insertAdjacentHTML('beforeend', `<style>
+        *{box-sizing:border-box;}
+        html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;}
+        body{font-family:sans-serif;user-select:none;}
+        #pcStatus{color:gold;text-align:center;padding:8px 10px;font-weight:bold;font-size:13px;
+          line-height:1.3;border-bottom:1px solid gold;display:-webkit-box;-webkit-box-orient:vertical;
+          -webkit-line-clamp:2;overflow:hidden;}
+        #pcGrid{display:flex;gap:6px;padding:8px 10px;}
+        #pcGrid button{background:yellow;color:black;border:none;border-radius:8px;font-weight:bold;
+          cursor:pointer;flex:1 1 0;min-width:0;height:46px;font-size:12px;}
+        #pcGrid button:active{opacity:.75;}
+      </style>`);
+      win.document.body.innerHTML = `
+        <div id="pcStatus">${nowPlaying.textContent}</div>
+        <div id="pcGrid">
+          <button data-a="prev">⏮ Prev</button>
+          <button data-a="playpause">${playPauseBtn.textContent}</button>
+          <button data-a="skip">Skip ⏭</button>
+          <button data-a="shuffle">Shuffle</button>
+          <button data-a="rewind5">-5s</button>
+          <button data-a="forward5">+5s</button>
+        </div>`;
+      win.document.querySelectorAll('[data-a]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          switch (btn.dataset.a) {
+            case 'prev': if (prevBtn) prevBtn.click(); break;
+            case 'playpause': playPauseBtn.click(); break;
+            case 'skip': skipBtn.click(); break;
+            case 'shuffle': shuffleBtn.click(); break;
+            case 'rewind5': rewind5Btn.click(); break;
+            case 'forward5': forward5Btn.click(); break;
+          }
+        });
+      });
+      win.addEventListener('pagehide', teardownPip);
+      pipConsoleBtn.classList.add('active');
+      pipTimer = setInterval(tickPip, 250);
+    }
+    function updateClassicPip(){
+      if (!pipWin || pipMode !== 'classic') return;
+      const st = pipWin.document.getElementById('pcStatus');
       if (st) st.textContent = nowPlaying.textContent;
-      const pp = pipConsoleWindow.document.querySelector('[data-a="playpause"]');
+      const pp = pipWin.document.querySelector('[data-a="playpause"]');
       if (pp) pp.textContent = playPauseBtn.textContent;
     }
-    setInterval(updatePipConsole, 1000);
+
+    function tickPip(){
+      if (!pipWin) return;
+      if (pipMode === 'modern') updateModernPip(); else updateClassicPip();
+    }
+    function updatePipConsole(){ tickPip(); } // called whenever the play/pause state changes
+
+    async function togglePip(mode){
+      if (pipWin && pipMode === mode) { closePip(); return; }
+      if (pipWin) { closePip(); await new Promise(r => setTimeout(r, 150)); } // other style open: swap
+      if (mode === 'classic') await openClassicPip(); else await openModernPip();
+    }
+
+    if ('documentPictureInPicture' in window) {
+      pipConsoleBtn.style.display = '';
+      pipConsoleBtn.title = 'Open the PIP console';
+      let pipBtnClicks = 0, pipBtnTimer = null;
+      pipConsoleBtn.addEventListener('click', () => {
+        pipBtnClicks++; clearTimeout(pipBtnTimer);
+        pipBtnTimer = setTimeout(() => {
+          const n = pipBtnClicks; pipBtnClicks = 0;
+          togglePip(n >= 2 ? 'classic' : 'modern');
+        }, 300);
+      });
+    }
 
     audio.addEventListener('ended',()=>{ if(!isLoopEnabled) handleTrackEnd(); });
     video.addEventListener('ended',()=>{ if(!isLoopEnabled) handleTrackEnd(); });
@@ -1686,10 +1852,17 @@
         const file=playlist[idx];
         if(!file) return;
         let match=false;
-        if(scope!=='lyrics'){
-          match=file.name.toLowerCase().includes(lower)||(file.metadata&&file.metadata.artist&&file.metadata.artist.toLowerCase().includes(lower));
+        if(scope==='name'||scope==='all'){
+          match=file.name.toLowerCase().includes(lower);
         }
-        if(!match&&scope!=='name'&&window._lyricsSearchMatch){
+        if(!match&&(scope==='artist'||scope==='all')){
+          // creator = the artist tag inside the file plus the artist folder it sits in (and the
+          // album, for "All"). Tag data fills in a moment after a track first shows up.
+          const folderArtist=(file.metadata&&file.metadata.artist&&file.metadata.artist!=='Unknown Artist')?file.metadata.artist:'';
+          const x=file.extraMeta||{};
+          match=folderArtist.toLowerCase().includes(lower)||(x.artist||'').toLowerCase().includes(lower)||(scope==='all'&&(x.album||'').toLowerCase().includes(lower));
+        }
+        if(!match&&(scope==='lyrics'||scope==='all')&&window._lyricsSearchMatch){
           match=window._lyricsSearchMatch(file.name,lower);
         }
         item.classList.toggle('search-hidden',!match);
@@ -1717,10 +1890,14 @@
     // Search scope: defaults to file-name-only the very first time, then remembers whatever
     // was last picked. A custom dropdown (not a native <select>) so the hover color inside the
     // open list can actually match the theme.
-    const SCOPE_LABELS = { both:'Both', name:'Name', lyrics:'Lyrics' };
-    const SCOPE_PLACEHOLDERS = { both:'Search Lyrics And File Names', name:'Search File Names', lyrics:'Search Song Lyrics' };
+    const SCOPE_LABELS = { all:'All', name:'Name', artist:'Artist', lyrics:'Lyrics' };
+    const SCOPE_PLACEHOLDERS = { all:'Search Names, Artists And Lyrics', name:'Search File Names', artist:'Search Artists', lyrics:'Search Song Lyrics' };
     let searchScopeValue = 'name';
-    try { searchScopeValue = localStorage.getItem('impSearchScope') || 'name'; } catch(e) {}
+    try {
+      let saved = localStorage.getItem('impSearchScope') || 'name';
+      if (saved === 'both') saved = 'all'; // "Both" was renamed "All" (it now covers artists too)
+      searchScopeValue = SCOPE_LABELS[saved] ? saved : 'name';
+    } catch(e) {}
     const scopeTrigger=document.getElementById('scopeTrigger');
     const scopeLabel=document.getElementById('scopeLabel');
     const scopeMenu=document.getElementById('scopeMenu');
@@ -2434,32 +2611,33 @@
         }
       }
 
-   // Public API
-    window._lyricsOnTrackStart = function(filename) { loadLyricsFor(filename); };
-    window._lyricsRegisterFile = function(stem, text, rating) {
-      const key = stem.toLowerCase().trim();
-      const existing = lyricsMap[key];
-      const newHasTs = /^\d{1,2}:\d{2}/.test(text.split('\n').find(l=>l.trim())||'');
-      const oldHasTs = existing && /^\d{1,2}:\d{2}/.test((existing.text||'').split('\n').find(l=>l.trim())||'');
-      if (!existing || (newHasTs && !oldHasTs)) {
-        lyricsMap[key] = { text, rating: rating || 'any' };
-      }
-    };
-    window._lyricsSearchMatch = function(filename, queryLower) {
-      const entry = lyricsMap[stemOf(filename)];
-      return !!(entry && entry.text && entry.text.toLowerCase().includes(queryLower));
-    };
-    window._lyricsOnStop = function() {
-      if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
-      currentStemForWrong = null;
-      clearDisplay('No song playing');
-      statusEl.textContent = '';
-      noTsEl.style.display = 'none';
-    };
-  })();
-  // ── End Lyrics Engine ─────────────────────────────────────────────────
+      // Public API
+      window._lyricsOnTrackStart = function(filename) { loadLyricsFor(filename); };
+      window._lyricsRegisterFile = function(stem, text, rating) {
+        const key = stem.toLowerCase().trim();
+        // Prefer timestamped version if we already have a plain one
+        const existing = lyricsMap[key];
+        const newHasTs = /^\d{1,2}:\d{2}/.test(text.split('\n').find(l=>l.trim())||'');
+        const oldHasTs = existing && /^\d{1,2}:\d{2}/.test((existing.text||'').split('\n').find(l=>l.trim())||'');
+        if (!existing || (newHasTs && !oldHasTs)) {
+          lyricsMap[key] = { text, rating: rating || 'any' };
+        }
+      };
+      window._lyricsSearchMatch = function(filename, queryLower) {
+        const entry = lyricsMap[stemOf(filename)];
+        return !!(entry && entry.text && entry.text.toLowerCase().includes(queryLower));
+      };
+      window._lyricsOnStop = function() {
+        if (lyricsTimer) { clearInterval(lyricsTimer); lyricsTimer = null; }
+        currentStemForWrong = null;
+        clearDisplay('No song playing');
+        statusEl.textContent = '';
+        noTsEl.style.display = 'none';
+      };
+    })();
+    // ── End Lyrics Engine ─────────────────────────────────────────────────
 
-});
+  });
 </script>
 </body>
 </html>
