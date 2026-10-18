@@ -2263,10 +2263,8 @@
 <!-- ================================================================= -->
 <style>
   #imp-exe-banner {
-    position: fixed !important;
-    top: 10px !important;
-    left: 10px !important;
-    z-index: 2147483647 !important;
+    display: inline-block !important;
+    margin-bottom: 12px !important;
     background: rgba(0, 0, 0, 0.95) !important;
     border: 2px solid #FFD700 !important;
     padding: 7px 14px !important;
@@ -2292,15 +2290,6 @@
     Install Inflated (.EXE) Now with atomic memory! (Latest: 10/18/26)
   </a>
 </div>
-<script>
-  // Forces the banner to stay locked to the viewport and bypass any body scrolling traps
-  (function() {
-    const banner = document.getElementById('imp-exe-banner');
-    if (banner) {
-      document.documentElement.appendChild(banner);
-    }
-  })();
-</script>
 <!-- ================================================================= -->
 <!-- END: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON -->
 <!-- ================================================================= -->
