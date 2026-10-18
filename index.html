@@ -2277,7 +2277,7 @@
     transition: all 0.25s ease-in-out !important;
   }
   #imp-exe-banner:hover {
-    box-shadow: 0 0 20px #FFD700, 0 4px 15px rgba(0,0,0,0.7) !important;
+    box-shadow: 0 0 22px #FFD700, 0 4px 15px rgba(0,0,0,0.7) !important;
     border-color: #FFD700 !important;
     transform: scale(1.02);
   }
@@ -2293,10 +2293,12 @@
   </a>
 </div>
 <script>
-  // Forces the banner to bypass body positioning traps and stay glued to the viewport
+  // Forces the banner to stay locked to the viewport and bypass any body scrolling traps
   (function() {
     const banner = document.getElementById('imp-exe-banner');
-    if (banner) document.documentElement.appendChild(banner);
+    if (banner) {
+      document.documentElement.appendChild(banner);
+    }
   })();
 </script>
 <!-- ================================================================= -->
