@@ -2261,8 +2261,34 @@
 <!-- START: INFLATED MEDIA PLAYER .EXE DOWNLOAD BUTTON (DO NOT DELETE) -->
 <!-- Easily update the Google Drive link and date below when needed -->
 <!-- ================================================================= -->
-<div id="imp-exe-banner" style="position: fixed; top: 10px; left: 10px; z-index: 999999; background: rgba(0, 0, 0, 0.85); border: 2px solid #ffd700; padding: 6px 12px; border-radius: 6px; font-family: sans-serif; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-  <a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank" style="color: #ffd700; text-decoration: underline; font-weight: bold;">
+<style>
+  #imp-exe-banner {
+    position: fixed !important;
+    top: 10px !important;
+    left: 10px !important;
+    z-index: 2147483647 !important;
+    background: rgba(0, 0, 0, 0.92) !important;
+    border: 2px solid #ffd700 !important;
+    padding: 7px 14px !important;
+    border-radius: 6px !important;
+    font-family: sans-serif !important;
+    font-size: 12px !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+    transition: all 0.25s ease-in-out !important;
+  }
+  #imp-exe-banner:hover {
+    box-shadow: 0 0 20px #FFD700, 0 4px 15px rgba(0,0,0,0.7) !important;
+    border-color: #ffffff !important;
+    transform: scale(1.02);
+  }
+  #imp-exe-banner a {
+    color: #ffd700 !important;
+    text-decoration: underline !important;
+    font-weight: bold !important;
+  }
+</style>
+<div id="imp-exe-banner">
+  <a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank">
     Install Inflated (.EXE) Now with atomic memory! (Latest: 10/18/26)
   </a>
 </div>
