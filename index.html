@@ -393,6 +393,12 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     .core-bars { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin-top: 4px; }
     .core { height: 12px; background: rgba(var(--fg-rgb),0.12); border-radius: 3px; position: relative; overflow: hidden; }
     .core i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--fg); }
+.tb-hide { display: none !important; }
+    #controls.tb-compact { gap: 4px; }
+    #controls.tb-compact button, #controls.tb-compact .toggle-btn { padding: 5px 8px; font-size: 12px; margin: 2px; }
+    .track-item { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+    html.lite .track-item, html.lite button, html.lite .toggle-btn { transition: none !important; }
+    html.lite .track-item.playing { box-shadow: none; }
 </style>
 <script>
 /* THEMES: colors live in CSS variables; this runs before the page paints so there is no flash */
@@ -403,7 +409,6 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     'default':BASE, paper:PAPER,
     hacker:{bg:'#000000',fg:'#00ff41',surface:'#03170a',deep:'#010a03',muted:'#7dffa0',ok:'#00ff41',okbg:'#064d12',bad:'#ff5050',badbg:'#240000',info:'#39e0b0',infobg:'#022019',warn:'#c6ff3c',fgbg:'#05361a',light:false},
     contrasted:{bg:'#000000',fg:'#ffffff',surface:'#181818',deep:'#080808',muted:'#dddddd',ok:'#b8ffb8',okbg:'#1a3d1a',bad:'#ff8080',badbg:'#2a0000',info:'#b0f0ff',infobg:'#002a2e',warn:'#ffd699',fgbg:'#2a2a2a',light:false},
-    ducky:{bg:'#cdb04a',fg:'#1b1500',surface:'#d8bd5e',deep:'#e0c870',muted:'#3a2f00',ok:'#0a5a0a',okbg:'#c9d98a',bad:'#9a0000',badbg:'#e6b98a',info:'#00455a',infobg:'#dcc86a',warn:'#6a3400',fgbg:'#c2a43c',light:true}
   };
   function rgb(h){h=h.replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
   function hex(a){return '#'+a.map(function(v){v=Math.max(0,Math.min(255,Math.round(v)));return (v<16?'0':'')+v.toString(16);}).join('');}
@@ -423,6 +428,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     if(save){var j=JSON.stringify({name:name,bg:cbg,fg:cfg}); try{localStorage.setItem('impTheme',j);}catch(e){} try{require('electron').ipcRenderer.send('imp-setting-set','impTheme',j);}catch(e){}}
   };
   window.impThemeRaw=function(){var raw=null; try{raw=localStorage.getItem('impTheme');}catch(e){} if(!raw){try{raw=require('electron').ipcRenderer.sendSync('imp-setting-get','impTheme');}catch(e){}} return raw;};
+  try{ if((navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)) document.documentElement.classList.add('lite'); }catch(e){}
   try{var s=JSON.parse(window.impThemeRaw()||'null'); if(s) window.impApplyTheme(s.name,s.bg,s.fg,false);}catch(e){}
 })();
 </script>
@@ -610,7 +616,6 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       <button class="toggle-btn" data-theme="paper">Paper</button>
       <button class="toggle-btn" data-theme="contrasted">Contrasted</button>
       <button class="toggle-btn" data-theme="hacker">Hacker</button>
-      <button class="toggle-btn" data-theme="ducky">Ducky</button>
       <button class="toggle-btn" data-theme="custom">Custom</button>
     </div>
     <div id="customThemeRow">
@@ -1010,6 +1015,15 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         return new Blob([buf.subarray(0, r.bytesRead)]);
       } finally { await fh.close(); }
     }
+    // Covers are often huge; the list only needs a ~144px thumbnail, so shrink once and drop the original.
+    async function shrinkImage(blob, h) {
+      if (blob.size < 30000 || typeof createImageBitmap !== 'function') return URL.createObjectURL(blob);
+      const bmp = await createImageBitmap(blob, { resizeHeight: h, resizeQuality: 'medium' });
+      const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+      c.getContext('2d').drawImage(bmp, 0, 0);
+      try { bmp.close(); } catch(e) {}
+      return c.toDataURL('image/jpeg', 0.8);
+    }
     function readTags(file) {
       if (tagCache[file.name] !== undefined) return tagCache[file.name];
       const p = schedule(async () => {
@@ -1025,16 +1039,15 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
             jsmediatags.read(source, {
               onSuccess: (tag) => {
                 const t = (tag && tag.tags) || {};
-                let picUrl = null;
+                let blob = null;
                 if (t.picture && t.picture.data) {
-                  try {
-                    const bytes = new Uint8Array(t.picture.data);
-                    picUrl = URL.createObjectURL(new Blob([bytes], { type: t.picture.format || 'image/jpeg' }));
-                  } catch(e) { picUrl = null; }
+                  try { blob = new Blob([new Uint8Array(t.picture.data)], { type: t.picture.format || 'image/jpeg' }); } catch(e) { blob = null; }
                 }
                 const rawYear = t.year || t.TYER || t.TDRC || null;
                 const yearMatch = rawYear ? String(rawYear).match(/\d{4}/) : null;
-                finish({ album: t.album || null, artist: t.artist || null, year: yearMatch ? yearMatch[0] : null, picUrl });
+                const meta = { album: t.album || null, artist: t.artist || null, year: yearMatch ? yearMatch[0] : null };
+                if (!blob) return finish(Object.assign(meta, { picUrl: null }));
+                shrinkImage(blob, 144).then(u => finish(Object.assign(meta, { picUrl: u })), () => finish(Object.assign(meta, { picUrl: URL.createObjectURL(blob) })));
               },
               onError: () => finish(EMPTY_TAGS())
             });
@@ -1099,6 +1112,25 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         return pr;
       }
       return readTags(file).then(tags => { thumbCache[file.name]=tags.picUrl; return tags.picUrl; });
+    }
+    // Full-size artwork for the PIP console only (current song), kept for the last two songs.
+    const bigArtCache = [];
+    async function bigArt(file) {
+      if (file.name.toLowerCase().endsWith('.mp4')) return generateThumb(file);
+      const hit = bigArtCache.find(x => x.name === file.name); if (hit) return hit.url;
+      try {
+        let source = file;
+        if (file.__filePath) { source = await readTagSource(file.__filePath); if (!source) return generateThumb(file); }
+        const url = await new Promise(res => {
+          jsmediatags.read(source, {
+            onSuccess: tag => { const t = (tag && tag.tags) || {}; res(t.picture && t.picture.data ? URL.createObjectURL(new Blob([new Uint8Array(t.picture.data)], { type: t.picture.format || 'image/jpeg' })) : null); },
+            onError: () => res(null)
+          });
+          setTimeout(() => res(null), 8000);
+        });
+        if (url) { bigArtCache.push({ name: file.name, url }); while (bigArtCache.length > 2) { const o = bigArtCache.shift(); try { URL.revokeObjectURL(o.url); } catch(e) {} } return url; }
+      } catch(e) {}
+      return generateThumb(file);
     }
     // When everything has finished loading, take a second, closer look at every song that ended
     // up without artwork (one retry each) before leaving its box dark.
@@ -1304,6 +1336,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       updateFilterCount();
       fitPlaylist();
       scheduleThumbRecheck(myGen);
+      requestAnimationFrame(fitToolbar);
     }
 
     function startFromList(index){
@@ -1742,6 +1775,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     visualizerBtn.addEventListener('click',()=>{
       isVisualizerEnabled=!isVisualizerEnabled;
       visualizerBtn.classList.toggle('active',isVisualizerEnabled);
+      if(isVisualizerEnabled){ wantGraph(); startViz(); }
       vizWrapper.style.display=isVisualizerEnabled?'block':'none';
       const pl=document.getElementById('playlist');
       if(pl) pl.classList.toggle('viz-expanded',isVisualizerEnabled);
@@ -1945,7 +1979,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         const artist = extra.artist || (track.metadata && track.metadata.artist !== 'Unknown Artist' ? track.metadata.artist : '');
         pipWin.document.getElementById('pArtist').textContent = artist || '';
       });
-      generateThumb(track).then(url => { if (track === pipLastTrack && pipWin) pipArtUrl = url || null; });
+      bigArt(track).then(url => { if (track === pipLastTrack && pipWin) pipArtUrl = url || null; });
     }
 
     function updateModernPip(){
@@ -2427,6 +2461,30 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       }
     }
     favOnlyBtn.addEventListener('click',()=>setFavMode(!favMode));
+    // Keeps the top buttons on ONE row on computers: if they would wrap, Mp3/Mp4 hide first, then Best/Good.
+    const toolbar=document.getElementById('controls');
+    function toolbarWrapped(){
+      const kids=[...toolbar.children].filter(el=>el.offsetParent!==null&&el.id!=='filterCount'&&el.offsetHeight>0);
+      if(kids.length<2) return false;
+      const top=kids[0].offsetTop; return kids.some(k=>k.offsetTop>top+6);
+    }
+    let fitBusy=false;
+    function fitToolbar(){
+      if(fitBusy) return; fitBusy=true;
+      try{
+        const t1=[mp3OnlyBtn,mp4OnlyBtn], t2=[bestTracksBtn,goodTracksBtn];
+        [...t1,...t2].forEach(b=>b.classList.remove('tb-hide')); toolbar.classList.remove('tb-compact');
+        if(window.matchMedia('(pointer: coarse)').matches) return;       // phones keep their own multi-row layout
+        if(toolbarWrapped()){
+          t1.forEach(b=>b.classList.add('tb-hide')); if(formatMode!=='all') setFormat(formatMode);
+          if(toolbarWrapped()){ t2.forEach(b=>b.classList.add('tb-hide')); if(filterMode!=='all'){ setFilter(filterMode); refreshDim(); } }
+          if(toolbarWrapped()) toolbar.classList.add('tb-compact');   // last resort: slightly smaller buttons
+        }
+      } finally { fitBusy=false; }
+    }
+    window.addEventListener('resize',()=>requestAnimationFrame(fitToolbar));
+    requestAnimationFrame(fitToolbar); setTimeout(fitToolbar,400);
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitToolbar());
     function setFormat(m){
       if(favMode){ favMode=false; favOnlyBtn.classList.remove('active'); }
       formatMode = formatMode===m ? 'all' : m;
@@ -2438,7 +2496,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     mp3OnlyBtn.addEventListener('click',()=>setFormat('mp3'));
     mp4OnlyBtn.addEventListener('click',()=>setFormat('mp4'));
 
-    function resumeAudioCtx(){ if(audioContext.state==='suspended') audioContext.resume().catch(()=>{}); }
+    let graphWanted=false;   // the audio-effects engine stays asleep (lighter, lower delay) until frequency / quality / visualizer is used
+    function resumeAudioCtx(){ if(graphWanted&&audioContext.state==='suspended') audioContext.resume().catch(()=>{}); }
     document.addEventListener('click',resumeAudioCtx);
     document.addEventListener('touchstart',resumeAudioCtx,{passive:true});
     const analyserNode=audioContext.createAnalyser(); analyserNode.fftSize=256; analyserNode.smoothingTimeConstant=0.82;
@@ -2449,6 +2508,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     eqFilter.connect(analyserNode); analyserNode.connect(audioContext.destination);   // 'Full' quality = straight through, nothing in the way
     let audioGraphConnected=false, videoGraphConnected=false;
     function connectToGraph(elem){
+      if(!graphWanted) return;
       resumeAudioCtx();
       try{
         if(elem===audio&&!audioGraphConnected){audioContext.createMediaElementSource(audio).connect(eqFilter);audioGraphConnected=true;}
@@ -2457,6 +2517,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     }
     audio.addEventListener('play',()=>connectToGraph(audio));
     video.addEventListener('play',()=>connectToGraph(video));
+    function wantGraph(){ if(graphWanted) return; graphWanted=true; resumeAudioCtx(); const el=currentMediaElement; if(el&&!el.paused) connectToGraph(el); }
 
     function onMediaPlay(){if(isAlarmActive||currentRandomPause)return;isPaused=false;if(currentTrack)nowPlaying.textContent=currentTrack.name;updatePlayPauseButton();}
     function onMediaPause(){
@@ -2479,9 +2540,11 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     const freqBins=new Uint8Array(analyserNode.frequencyBinCount);
     const peakHold=new Float32Array(analyserNode.frequencyBinCount).fill(0);
     const peakDecay=0.015;
+    let vizRunning=false;
+    function startViz(){ if(vizRunning) return; vizRunning=true; requestAnimationFrame(drawVisualizer); }
     function drawVisualizer(){
+      if(!isVisualizerEnabled){ vizRunning=false; return; }   // the animation loop stops completely when the visualizer is off
       requestAnimationFrame(drawVisualizer);
-      if(!isVisualizerEnabled) return;
       syncCanvasSize();
       analyserNode.getByteFrequencyData(freqBins);
       const W=vizCanvas.width,H=vizCanvas.height,count=freqBins.length,bW=W/count;
@@ -2497,12 +2560,10 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         if(peakHold[i]>2){vizCtx.fillStyle=THEME.fg;vizCtx.shadowColor=THEME.fg;vizCtx.shadowBlur=6;vizCtx.fillRect(x,H-peakHold[i]-2,Math.max(bW-1.5,1),2);vizCtx.shadowBlur=0;}
       }
     }
-    drawVisualizer();
-
     const frequencySlider=document.getElementById('frequencySlider');
     const frequencyDisplay=document.getElementById('frequencyDisplay');
     frequencySlider.addEventListener('input',()=>{
-      const gain=(parseInt(frequencySlider.value)-50)/50*15; eqFilter.gain.value=gain;
+      const gain=(parseInt(frequencySlider.value)-50)/50*15; eqFilter.gain.value=gain; if(Math.abs(gain)>=0.6) wantGraph();
       if(Math.abs(gain)<0.6)frequencyDisplay.textContent='Flat';
       else if(gain<0)frequencyDisplay.textContent=`Bass +${Math.abs(Math.round(gain))} dB`;
       else frequencyDisplay.textContent=`Treble +${Math.round(gain)} dB`;
@@ -2549,6 +2610,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     function applyQuality(){
       const v=Number(qualitySlider.value);
       if(v>=100){ routeQuality(false); qualityDisplay.textContent='Full'; return; }
+      wantGraph();
       const T=Math.max(6,Math.round(baselineKbps()*Math.pow(v/100,1.6)));   // gentle near 100, very low at the far left
       const cut=Math.min(cutoffFor(T),audioContext.sampleRate/2*0.9);
       qLP1.frequency.value=cut; qLP2.frequency.value=cut;
@@ -2668,6 +2730,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       ctFg.addEventListener('input',()=>{ st.fg=ctFg.value; apply(); });
       ctBgHex.addEventListener('input',()=>{ let v=ctBgHex.value.trim(); if(v[0]!=='#') v='#'+v; if(okHex(v)){ st.bg=v; apply(); } });
       ctFgHex.addEventListener('input',()=>{ let v=ctFgHex.value.trim(); if(v[0]!=='#') v='#'+v; if(okHex(v)){ st.fg=v; apply(); } });
+      if(!btns.some(b=>b.dataset.theme===st.name)) st.name='default';
       sync();
     })();
     // ---- event log + self-healing -------------------------------------------------------
@@ -2712,7 +2775,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       try{ if(typeof require==='function'){ os=require('os'); ipc=require('electron').ipcRenderer; } }catch(e){}
       window.__stats=window.__stats||{songs:0,listen:0,repairs:0,wd:0,mediaErrors:0};
       const T0=Date.now(), hist=[], MAXH=450, lagHist=[], fpsHist=[];
-      let fpsReady=false, open=false, lag=0, lastTick=performance.now(), frames=0, fps=0, lastFps=performance.now(), prevCores=null;
+      let fpsProbe=null, fpsReady=false, open=false, lag=0, lastTick=performance.now(), frames=0, fps=0, lastFps=performance.now(), prevCores=null;
       const errs=[]; window.addEventListener('error',()=>errs.push(Date.now())); window.addEventListener('unhandledrejection',()=>errs.push(Date.now()));
       const longTasks=[]; try{ new PerformanceObserver(l=>{ for(const e of l.getEntries()) longTasks.push({t:Date.now(),d:e.duration}); while(longTasks.length>200) longTasks.shift(); }).observe({entryTypes:['longtask']}); }catch(e){}
       let hiddenMs=0, hiddenSince=document.hidden?Date.now():0;
@@ -2748,12 +2811,25 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           }
         }
         s.gpu=(gpuInfo&&gpuInfo.usage!=null)?gpuInfo.usage:null;
-        const lagS=Math.min(100,lag/2);
+        const nowT=Date.now();
+        const curFps = document.hidden ? null : (open ? (fpsHist.length?Math.min(...fpsHist.slice(-3)):fpsProbe) : fpsProbe);
+        const fpsS = curFps==null ? 0 : (curFps>=55?0:curFps>=45?25:curFps>=30?55:curFps>=20?75:curFps>=12?90:100);
+        const blocked=longTasks.filter(x=>nowT-x.t<10000).reduce((a,x)=>a+x.d,0);
+        const ltS=Math.min(100,blocked/20);
+        s.fps=curFps; s.fpsS=fpsS; s.ltS=ltS;
+        const lagS=Math.min(100,lag*0.8);
         const ramS=s.ramPct!=null ? s.ramPct : (s.heapLimit ? Math.round(s.heap/s.heapLimit*100) : 0);
         s.lagS=lagS; s.ramS=ramS; s.cpuS=s.cpu||0; s.gpuS=s.gpu||0;
-        s.stress=Math.max(0,lagS||0,(ramS>=85?ramS:ramS*0.5)||0,s.cpuS,s.gpuS);
+        s.stress=Math.max(0,lagS||0,fpsS,ltS,(ramS>=85?ramS:ramS*0.5)||0,s.cpuS,s.gpuS);
         hist.push(s); if(hist.length>MAXH) hist.shift();
         if(open) render();
+      }
+      // a one-second frame-rate check every so often, even while the panel is closed
+      function probeFps(){
+        if(open||document.hidden) return;
+        let f=0; const t0=performance.now();
+        function r(t){ f++; if(t-t0<1000) requestAnimationFrame(r); else fpsProbe=f*1000/(t-t0); }
+        requestAnimationFrame(r);
       }
       function levelOf(x){ for(let i=0;i<LEVELS.length;i++) if(x<LEVELS[i][2]) return i; return 4; }
       const esc=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -2770,6 +2846,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         const now=Date.now(), errMin=errs.filter(t=>now-t<60000).length, lt=longTasks.filter(x=>now-x.t<60000);
         const reasons=[];
         if(li>=2){
+          if(s.fpsS>=45) reasons.push('Low frame rate ('+Math.round(s.fps)+' fps)');
+          if(s.ltS>=45) reasons.push('Page freezing in bursts');
           if(s.cpuS>=45) reasons.push('CPU bottleneck');
           if(s.gpuS>=45) reasons.push('GPU bottleneck');
           if(s.ramS>=85) reasons.push('RAM bottleneck');
@@ -2792,7 +2870,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           try{ if(elem.buffered&&elem.buffered.length) nowRows.push(['Buffered ahead',n1(elem.buffered.end(elem.buffered.length-1)-elem.currentTime)+' s']); }catch(e){} }
         const vq=(video.getVideoPlaybackQuality&&video.getVideoPlaybackQuality())||null;
         sections.push(section('Playback',nowRows.concat([
-          ['Audio engine',audioContext.state+', '+(audioContext.sampleRate/1000)+' kHz, output delay '+Math.round(((audioContext.outputLatency||audioContext.baseLatency)||0)*1000)+' ms'],
+          ['Audio engine',graphWanted?(audioContext.state+', '+(audioContext.sampleRate/1000)+' kHz, output delay '+Math.round(((audioContext.outputLatency||audioContext.baseLatency)||0)*1000)+' ms (effects on)'):'direct playback, effects off (lightest)'],
           vq&&vq.totalVideoFrames?['Video frames dropped',vq.droppedVideoFrames+' of '+vq.totalVideoFrames]:null,
           ['This session',S.songs+' songs started, '+dur(S.listen)+' of listening'],
           ['Self-repairs',S.wd+' freezes fixed, '+S.repairs+' mp3 repairs, '+S.mediaErrors+' media errors, '+errMin+' script errors (last min)']
@@ -2859,7 +2937,9 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         open=!open; body.style.display=open?'block':'none'; btn.innerHTML='Performance Info '+(open?'&#9662;':'&#9656;');
         if(open){ requestAnimationFrame(raf); render(); sample(); }
       });
-      setInterval(sample,2000);
+      const LITE=document.documentElement.classList.contains('lite');
+      (function loop(){ setTimeout(()=>{ if(open||!document.hidden) sample(); loop(); }, open?2000:(LITE?8000:4000)); })();
+      setInterval(probeFps, LITE?20000:15000); setTimeout(probeFps,3000);
     })();
 
     isPaused=true; updatePlaylistDisplay(); updatePlayPauseButton();
@@ -3332,10 +3412,10 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
 (function(){
   if(!/\.github\.io$/i.test(location.hostname)) return;
   var css=document.createElement('style');
-  css.textContent='#imp-exe-banner{display:inline-block;margin:0 0 12px 6px;background:rgba(0,0,0,.95);border:2px solid #FFD700;padding:7px 14px;border-radius:6px;font:12px sans-serif;box-shadow:0 4px 10px rgba(0,0,0,.5);transition:all .25s ease-in-out}#imp-exe-banner:hover{box-shadow:0 0 22px #FFD700,0 4px 15px rgba(0,0,0,.7);transform:scale(1.02)}#imp-exe-banner a,#imp-exe-banner a:visited{color:#FFD700;text-decoration:underline;font-weight:bold}';
+  css.textContent='#imp-exe-banner{display:inline-block;box-sizing:border-box;max-width:calc(100% - 230px);margin:0 0 12px 6px;background:var(--bg);border:2px solid var(--fg);padding:7px 14px;border-radius:6px;font:12px sans-serif;box-shadow:0 4px 10px rgba(0,0,0,.5);transition:all .25s ease-in-out}#imp-exe-banner:hover{box-shadow:0 0 22px var(--fg),0 4px 15px rgba(0,0,0,.7);transform:scale(1.02)}#imp-exe-banner a,#imp-exe-banner a:visited{color:var(--fg);text-decoration:underline;font-weight:bold}@media(max-width:700px){#imp-exe-banner{max-width:calc(100% - 96px);font-size:11px;padding:6px 10px}}';
   document.head.appendChild(css);
   var d=document.createElement('div'); d.id='imp-exe-banner';
-  d.innerHTML='<a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank" rel="noopener">Install Inflated Media For Windows 10/11 (64-bit) Faster Than Ever Before!  Last updated: 11/1/2026</a>';
+  d.innerHTML='<a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank" rel="noopener">Install Inflated Media For Windows 10 (64-bit) Faster Than Ever Before!  Last updated: 11/1/2026</a>';
   document.body.insertBefore(d,document.body.firstChild);
 })();
 </script>
