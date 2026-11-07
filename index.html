@@ -12,8 +12,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
 #customThemeRow{display:none;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--fg);}
 #customThemeRow input[type=color]{width:46px;height:30px;padding:0;border:1px solid var(--fg);background:none;border-radius:5px;cursor:pointer;vertical-align:middle;}
 #customThemeRow input[type=text]{background:var(--surface);color:var(--fg);border:1px solid var(--fg);border-radius:5px;padding:5px 7px;font-family:monospace;width:84px;vertical-align:middle;}
-#playlist{scroll-snap-type:y proximity;scroll-padding:10px 0;}
-.track-item{scroll-snap-align:start;}
+#playlist{overscroll-behavior:contain;}
 
     *, *::before, *::after { box-sizing: border-box; }
     html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
@@ -396,7 +395,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
 .tb-hide { display: none !important; }
     #controls.tb-compact { gap: 4px; }
     #controls.tb-compact button, #controls.tb-compact .toggle-btn { padding: 5px 8px; font-size: 12px; margin: 2px; }
-    .track-item { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+    html.lite .track-item { content-visibility: auto; contain-intrinsic-size: auto 56px; }
     html.lite .track-item, html.lite button, html.lite .toggle-btn { transition: none !important; }
     html.lite .track-item.playing { box-shadow: none; }
 </style>
@@ -800,7 +799,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       document.documentElement.style.setProperty('--playlist-height', newH + 'px'); requestAnimationFrame(fitPlaylist);
     }
 
-    function setVideoActive(show) {
+    function setVideoActive(show) { _setVideoActive(show); requestAnimationFrame(()=>fitPlaylist()); setTimeout(()=>fitPlaylist(),300); }
+    function _setVideoActive(show) {
       // the video is playing in the PIP console / native Picture-in-Picture, so the empty box on the page is hidden
       if ((typeof pipWin!=='undefined' && pipWin && pipMode==='modern') || document.pictureInPictureElement) show = false;
       videoContainer.style.display = show ? 'block' : 'none';
@@ -1313,7 +1313,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           if(myGen!==playlistRenderGen) return; // this row may no longer be in the DOM
           if(!url){return;}
           thumbDiv.innerHTML='';
-          const img=document.createElement('img'); img.src=url; img.alt=''; img.loading='lazy';
+          const img=document.createElement('img'); img.src=url; img.alt=''; img.loading='lazy'; img.decoding='async';
           thumbDiv.appendChild(img);
         });
         // Album/artist/year/size/bitrate take an extra read of the file, so they're filled in just
@@ -2028,27 +2028,32 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       catch(e) { console.warn('PIP Console unavailable:', e); return; }
       pipWin = win; pipMode = 'classic';
       win.document.head.insertAdjacentHTML('beforeend', `<style>
+        :root{--bg:#000000;--fg:#FFD700;--fg-rgb:255,215,0;--s:1}
         *{box-sizing:border-box;}
-        html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;}
+        html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg);overflow:hidden;}
         body{font-family:sans-serif;user-select:none;}
-        #pcStatus{color:gold;text-align:center;padding:8px 10px;font-weight:bold;font-size:13px;
-          line-height:1.3;border-bottom:1px solid gold;display:-webkit-box;-webkit-box-orient:vertical;
-          -webkit-line-clamp:2;overflow:hidden;}
-        #pcGrid{display:flex;gap:6px;padding:8px 10px;}
-        #pcGrid button{background:yellow;color:black;border:none;border-radius:8px;font-weight:bold;
-          cursor:pointer;flex:1 1 0;min-width:0;height:46px;font-size:12px;}
+        /* designed at 336x150 and scaled with the window; the top strip is kept clear of the window's own title/close controls */
+        #stage{position:absolute;left:0;top:0;width:336px;height:150px;transform:scale(var(--s));transform-origin:0 0;padding:30px 10px 8px;}
+        #pcName{color:var(--fg);font-weight:bold;font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+        #pcMeta{color:rgba(var(--fg-rgb),.75);font-size:11px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;padding-bottom:7px;border-bottom:1px solid var(--fg);}
+        #pcGrid{display:flex;gap:6px;padding-top:9px;}
+        #pcGrid button{background:var(--fg);color:var(--bg);border:none;border-radius:8px;font-weight:bold;cursor:pointer;flex:1 1 0;min-width:0;height:46px;font-size:12px;}
         #pcGrid button:active{opacity:.75;}
       </style>`);
       win.document.body.innerHTML = `
-        <div id="pcStatus">${nowPlaying.textContent}</div>
-        <div id="pcGrid">
-          <button data-a="prev">⏮ Prev</button>
-          <button data-a="playpause">${playPauseBtn.textContent}</button>
-          <button data-a="skip">Skip ⏭</button>
-          <button data-a="shuffle">Shuffle</button>
-          <button data-a="rewind5">-5s</button>
-          <button data-a="forward5">+5s</button>
+        <div id="stage">
+          <div id="pcName"></div><div id="pcMeta"></div>
+          <div id="pcGrid">
+            <button data-a="prev">⏮ Prev</button>
+            <button data-a="playpause">${playPauseBtn.textContent}</button>
+            <button data-a="skip">Skip ⏭</button>
+            <button data-a="shuffle">Shuffle</button>
+            <button data-a="rewind5">-5s</button>
+            <button data-a="forward5">+5s</button>
+          </div>
         </div>`;
+      const applyScale = () => { const s = Math.min(win.innerWidth / 336, win.innerHeight / 150); win.document.documentElement.style.setProperty('--s', (s > 0 ? s : 1).toFixed(3)); };
+      win.addEventListener('resize', applyScale); applyScale();
       win.document.querySelectorAll('[data-a]').forEach(btn => {
         btn.addEventListener('click', () => {
           switch (btn.dataset.a) {
@@ -2064,13 +2069,20 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       win.addEventListener('pagehide', teardownPip);
       pipConsoleBtn.classList.add('active');
       pipTimer = setInterval(tickPip, 250);
+      updateClassicPip();
     }
     function updateClassicPip(){
       if (!pipWin || pipMode !== 'classic') return;
-      const st = pipWin.document.getElementById('pcStatus');
-      if (st) st.textContent = nowPlaying.textContent;
-      const pp = pipWin.document.querySelector('[data-a="playpause"]');
-      if (pp) pp.textContent = playPauseBtn.textContent;
+      const d = pipWin.document, root = d.documentElement.style;
+      root.setProperty('--bg', THEME.bg); root.setProperty('--fg', THEME.fg); root.setProperty('--fg-rgb', THEME.fgRgb);   // follows the player's theme
+      const t = timerDisplay.textContent, v = volumeDisplay.textContent;
+      let name, meta;
+      if (currentTrack && !currentRandomPause && !isAlarmActive) { name = currentTrack.name; meta = (isPaused ? 'Paused' : 'Playing') + '  |  ' + t + '  |  Volume: ' + v; }
+      else { name = nowPlaying.textContent || 'Nothing playing'; meta = t + '  |  Volume: ' + v; }
+      const setText = (el, s) => { if (el && el.textContent !== s) el.textContent = s; };
+      const nm = d.getElementById('pcName'); setText(nm, name); if (nm) nm.title = name;
+      setText(d.getElementById('pcMeta'), meta);
+      setText(d.querySelector('[data-a="playpause"]'), playPauseBtn.textContent);   // only rewritten when it changes, so clicks are never lost
     }
 
     function tickPip(){
@@ -2731,7 +2743,50 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       ctBgHex.addEventListener('input',()=>{ let v=ctBgHex.value.trim(); if(v[0]!=='#') v='#'+v; if(okHex(v)){ st.bg=v; apply(); } });
       ctFgHex.addEventListener('input',()=>{ let v=ctFgHex.value.trim(); if(v[0]!=='#') v='#'+v; if(okHex(v)){ st.fg=v; apply(); } });
       if(!btns.some(b=>b.dataset.theme===st.name)) st.name='default';
+      window.impThemeUIRefresh=function(){ try{ const s=JSON.parse(window.impThemeRaw()||'null'); if(s){ st.name=s.name||'default'; if(s.bg) st.bg=s.bg; if(s.fg) st.fg=s.fg; } }catch(e){} sync(); };
       sync();
+    })();
+    // ---- Settings shared between the web page and the exe (a small file in the music folder) ----
+    (function settingsSync(){
+      const KEYS=['impTheme','impSliders','impFavorites','impQueueMode','impSearchScope'];
+      let hooks=null, applying=false, writeT=null;
+      const nativeSet=Storage.prototype.setItem;
+      Storage.prototype.setItem=function(k,v){
+        nativeSet.call(this,k,v);
+        if(this===window.localStorage && !applying && KEYS.includes(k)){ nativeSet.call(window.localStorage,'impSettingsUpdated',String(Date.now())); scheduleWrite(); }
+      };
+      function snapshot(){ const data={}; KEYS.forEach(k=>{ const v=localStorage.getItem(k); if(v!=null) data[k]=v; }); return {updated:+localStorage.getItem('impSettingsUpdated')||Date.now(),data}; }
+      function scheduleWrite(){ if(!hooks) return; clearTimeout(writeT); writeT=setTimeout(()=>{ Promise.resolve(hooks.write(snapshot())).catch(()=>{}); },1500); }
+      function applyRemote(obj){
+        applying=true;
+        try{
+          KEYS.forEach(k=>{ if(obj.data[k]!=null) nativeSet.call(localStorage,k,obj.data[k]); });
+          nativeSet.call(localStorage,'impSettingsUpdated',String(obj.updated));
+          try{ const t=JSON.parse(obj.data.impTheme||'null'); if(t){ impApplyTheme(t.name,t.bg,t.fg,false); if(window.impThemeUIRefresh) window.impThemeUIRefresh(); } }catch(e){}
+          try{ const o=JSON.parse(obj.data.impSliders||'null'); if(o){ const map={volume:volumeSlider,speed:speedSlider,frequency:frequencySlider,pitch:pitchSlider,quality:qualitySlider};
+            for(const k in map) if(o[k]!==undefined){ map[k].value=o[k]; map[k].dispatchEvent(new Event('input')); } } }catch(e){}
+          try{ const f=JSON.parse(obj.data.impFavorites||'null'); if(Array.isArray(f)){ favorites=new Set(f);
+            document.querySelectorAll('.track-item').forEach(it=>{ const t=playlist[+it.dataset.index], b=it.querySelector('.star-btn'); if(t&&b){ b.textContent=isFavorited(t)?'\u2605':'\u2606'; b.classList.toggle('favorited',isFavorited(t)); } });
+            if(favMode) refreshDim(); updateFilterCount(); } }catch(e){}
+          const qm=obj.data.impQueueMode; if(qm==='fifo'||qm==='lifo') setQueueMode(qm);
+          const sc=obj.data.impSearchScope; if(sc&&SCOPE_LABELS[sc]) setSearchScope(sc);
+        } finally { applying=false; }
+      }
+      async function sync(){
+        if(!hooks) return;
+        let remote=null; try{ remote=await hooks.read(); }catch(e){}
+        const localU=+localStorage.getItem('impSettingsUpdated')||0;
+        if(remote&&remote.data&&remote.updated>localU) applyRemote(remote);
+        else if(!remote||remote.updated<localU){
+          if(Object.keys(snapshot().data).length){
+            if(!localU){ applying=true; try{ nativeSet.call(localStorage,'impSettingsUpdated',String(Date.now())); }finally{ applying=false; } }
+            scheduleWrite();
+          }
+        }
+      }
+      window.impSettingsSync={attach(h){ hooks=h; sync(); }, sync};
+      window.addEventListener('focus',()=>sync());
+      document.addEventListener('visibilitychange',()=>{ if(!document.hidden) sync(); });
     })();
     // ---- event log + self-healing -------------------------------------------------------
     window.__impLog = window.__impLog || [];
@@ -2787,7 +2842,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       let staticInfo=null, gpuInfo=null, gpuBusy=false, lastGpuAt=0;
       if(ipc){ ipc.invoke('get-static-info').then(i=>{ staticInfo=i; }).catch(()=>{}); }
 
-      setInterval(()=>{ const n=performance.now(); const l=Math.max(0,n-lastTick-1000); lastTick=n; lag=document.hidden?lag*0.5:l; lagHist.push(lag); if(lagHist.length>30) lagHist.shift(); },1000);
+      setInterval(()=>{ const n=performance.now(); const l=Math.max(0,n-lastTick-1000); lastTick=n; lag=(document.hidden&&!ipc)?lag*0.5:l; lagHist.push(lag); if(lagHist.length>30) lagHist.shift(); },1000);
       function raf(t){ frames++; if(t-lastFps>=1000){ fps=frames*1000/(t-lastFps); frames=0; lastFps=t; if(fpsReady){ fpsHist.push(fps); if(fpsHist.length>30) fpsHist.shift(); } fpsReady=true; } if(open) requestAnimationFrame(raf); }
       function coreUsage(){
         if(!os) return null;
@@ -2811,13 +2866,13 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           }
         }
         s.gpu=(gpuInfo&&gpuInfo.usage!=null)?gpuInfo.usage:null;
-        const nowT=Date.now();
-        const curFps = document.hidden ? null : (open ? (fpsHist.length?Math.min(...fpsHist.slice(-3)):fpsProbe) : fpsProbe);
+        const nowT=Date.now(); const live=document.hasFocus()&&!document.hidden;   // minimized / background windows are not judged on frame rate or lag
+        const curFps = !live ? null : (open ? (fpsHist.length?Math.min(...fpsHist.slice(-3)):fpsProbe) : fpsProbe);
         const fpsS = curFps==null ? 0 : (curFps>=55?0:curFps>=45?25:curFps>=30?55:curFps>=20?75:curFps>=12?90:100);
         const blocked=longTasks.filter(x=>nowT-x.t<10000).reduce((a,x)=>a+x.d,0);
-        const ltS=Math.min(100,blocked/20);
+        const ltS=live?Math.min(100,blocked/20):0;
         s.fps=curFps; s.fpsS=fpsS; s.ltS=ltS;
-        const lagS=Math.min(100,lag*0.8);
+        const lagS=live?Math.min(100,lag*0.8):0;
         const ramS=s.ramPct!=null ? s.ramPct : (s.heapLimit ? Math.round(s.heap/s.heapLimit*100) : 0);
         s.lagS=lagS; s.ramS=ramS; s.cpuS=s.cpu||0; s.gpuS=s.gpu||0;
         s.stress=Math.max(0,lagS||0,fpsS,ltS,(ramS>=85?ramS:ramS*0.5)||0,s.cpuS,s.gpuS);
@@ -3083,6 +3138,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         }
       }
 
+      let currentHandle = null;
       async function loadFromHandle(handle) {
         if (isLoadingFolder) return;
         isLoadingFolder = true;
@@ -3109,6 +3165,15 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           statusEl.textContent = `✅ ${handle.name} — ${playlist.length} tracks loaded`;
           btn.textContent = '🔄 Reload Folder'; btn.classList.add('remembered'); btn.disabled = false;
           forgetBtn.style.display = 'inline-block'; setManualPickerVisible(false);
+          currentHandle = handle;
+          if (window.impSettingsSync) window.impSettingsSync.attach({     // shared settings file (also used by the exe)
+            read: async () => { try { const fh = await handle.getFileHandle('IMP-Settings.json'); return JSON.parse(await (await fh.getFile()).text()); } catch(e) { return null; } },
+            write: async (obj) => {
+              if ((await handle.queryPermission({ mode: 'readwrite' })) !== 'granted') return;     // saving needs the folder to be opened with edit access
+              const fh = await handle.getFileHandle('IMP-Settings.json', { create: true });
+              const w = await fh.createWritable(); await w.write(JSON.stringify(obj)); await w.close();
+            }
+          });
         } catch(e) {
           statusEl.textContent = 'Could not read folder. Try again.';
           btn.textContent = '📁 Remember Folder'; btn.classList.remove('remembered'); btn.disabled = false;
@@ -3141,14 +3206,24 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         if (btn._pendingHandle) {
           const handle = btn._pendingHandle; btn._pendingHandle = null;
           try {
-            const perm = await handle.requestPermission({ mode: 'read' });
+            let perm = await handle.requestPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') perm = await handle.requestPermission({ mode: 'read' });
             if (perm === 'granted') await loadFromHandle(handle);
             else statusEl.textContent = 'Permission denied.';
           } catch(e) { statusEl.textContent = 'Permission error.'; }
           return;
         }
+        if (currentHandle && btn.classList.contains('remembered')) {     // 'Reload Folder': same folder again (and asks for edit access once so settings can be saved)
+          try {
+            let perm = await currentHandle.requestPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') perm = await currentHandle.requestPermission({ mode: 'read' });
+            if (perm === 'granted') { await loadFromHandle(currentHandle); return; }
+          } catch(e) {}
+        }
         try {
-          const handle = await window.showDirectoryPicker({ mode: 'read' });
+          let handle;
+          try { handle = await window.showDirectoryPicker({ mode: 'readwrite' }); }
+          catch(e) { if (e && e.name === 'AbortError') throw e; handle = await window.showDirectoryPicker({ mode: 'read' }); }
           await saveHandle(handle); btn._pendingHandle = null;
           await loadFromHandle(handle);
         } catch(e) {
