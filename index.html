@@ -605,6 +605,15 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     <h4 style="margin-top:18px;">🔎 Search Modes</h4>
     <p>The small dropdown next to the search bar (desktop only) controls what your search actually looks at: <strong>Name</strong> matches file names only, <strong>Artist</strong> matches the creator (the artist tag and the artist folder), <strong>Lyrics</strong> matches lyrics text only, and <strong>All</strong> checks names, artists, albums and lyrics together. It remembers whatever you last picked. If you don't have any matching lyrics <code>.txt</code> files loaded, Lyrics and Both won't find anything extra beyond what Name already would — that's expected, not a bug.</p>
     <p>Search forgives typos and missing punctuation (it matches each word loosely, in any order), and the <strong>Album</strong> mode searches the album tag. <strong>Click a result</strong> and the player plays down the remaining results, then goes back to the normal playlist right after the song that was playing before. Clearing the search ends the detour.</p>
+    <div id="fuzzyBox" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;border:1px solid var(--fg);border-radius:6px;background:var(--surface);max-width:640px;">
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:bold;"><input type="checkbox" id="fuzzyOn" checked> Fuzzy Search</label>
+      <span id="fuzzySliderWrap" style="display:inline-flex;align-items:center;gap:8px;flex:1;min-width:250px;">
+        <span style="font-size:12px;opacity:.75;">Exact</span>
+        <input type="range" id="fuzzyLevel" min="0" max="100" value="50" style="flex:1;accent-color:var(--fg);cursor:pointer;">
+        <span style="font-size:12px;opacity:.75;">Loose</span>
+        <span id="fuzzyLevelLabel" style="min-width:74px;font-size:12px;font-weight:bold;text-align:right;">Balanced</span>
+      </span>
+    </div>
     <p><strong>&#9733; (Favorites)</strong> plays every song you starred, top to bottom, and switches off the Best/Good and Mp3/Mp4 filters. The counter next to PIP Console shows how many songs the active filters leave. Clicking <em>Volume Control &amp; Playback Speed</em> resets speed, frequency, pitch and quality (not volume). <strong>Quality</strong> only lowers quality from the file's own level (it can't improve it); all sliders are remembered. Alarms always keep one blank template, and a ringing alarm stops itself after 15 minutes.</p>
     <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
     <p>Name any .mp3/.mp4 file <strong>Add_Alarm</strong> and upload it with your music. Multiple variants work: Add_Alarm.mp3, Add_Alarm(1).mp3, etc.</p>
@@ -755,6 +764,30 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     // number and checks it after every await; if a newer call has since started, the older one
     // stops touching the DOM instead of racing the newer one and interleaving duplicate rows.
     let playlistRenderGen = 0;
+    function impToast(msg){
+      try{
+        const d=document.createElement('div'); d.textContent=msg;
+        d.style.cssText='position:fixed;left:16px;bottom:16px;max-width:min(520px,90vw);z-index:99999;padding:10px 14px;border-radius:8px;background:var(--surface,#111);color:var(--fg,#fff);border:1px solid var(--fg,#fff);font:13px/1.4 sans-serif;box-shadow:0 4px 18px rgba(0,0,0,.5);';
+        document.body.appendChild(d);
+        setTimeout(()=>{ d.style.transition='opacity .5s'; d.style.opacity='0'; setTimeout(()=>d.remove(),600); },9000);
+      }catch(e){}
+    }
+    // Drops freshly found songs into the list at random spots (the list is shuffled anyway) without
+    // disturbing whatever is playing: the playing song's index is shifted if a song lands above it.
+    function insertNewTracks(files){
+      let n=0;
+      for(const nf of files){
+        const before=playlist.length; addFileToPlaylist(nf);
+        if(playlist.length>before){
+          const f=playlist.pop(); const pos=Math.floor(Math.random()*(playlist.length+1));
+          playlist.splice(pos,0,f);
+          if(currentTrackIndex>=pos) currentTrackIndex++;
+          if(searchRun&&searchRun.resumeIdx>=pos) searchRun.resumeIdx++;
+          n++;
+        }
+      }
+      return n;
+    }
     function dedupePlaylist(){
       const seen = new Set(); const deduped = [];
       for (const f of playlist) {
@@ -2181,6 +2214,14 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       }
       return prev[b.length];
     }
+    let fuzzyOn=true, fuzzyLevel=50;
+    try{ const s=JSON.parse(localStorage.getItem('impFuzzy')||'null'); if(s){ fuzzyOn=s.on!==false; if(typeof s.level==='number') fuzzyLevel=Math.max(0,Math.min(100,s.level)); } }catch(e){}
+    // how many typos a typed word may have: 0 = exact. The middle of the slider (50) behaves like the old fixed setting.
+    function fuzzyMax(len){
+      if(len<3) return 0;
+      if(len<4) return fuzzyLevel>=85?1:0;
+      return Math.min(fuzzyLevel>60?4:2,Math.floor(len*fuzzyLevel/250+0.5));
+    }
     function fuzzyHas(hay, nq){
       if(!nq) return true;
       if(!hay) return false;
@@ -2188,7 +2229,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       let words=null;
       return nq.split(' ').every(t=>{
         if(hay.includes(t)) return true;
-        const max=t.length>=8?2:(t.length>=4?1:0);
+        if(!fuzzyOn) return false;
+        const max=fuzzyMax(t.length);
         if(!max) return false;
         if(!words) words=hay.split(' ');
         return words.some(w=>lev(t,w,max)<=max || (w.length>t.length && lev(t,w.slice(0,t.length),max)<=max));
@@ -2230,7 +2272,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     searchInput.addEventListener('input',()=>{
       const q=searchInput.value.trim();
       searchClear.classList.toggle('has-query',!!q);
-      if(q) applySearch(q);
+      clearTimeout(window._impSearchT);
+      if(q) window._impSearchT=setTimeout(()=>applySearch(searchInput.value.trim()||q),90);
       else{ searchRun=null;document.querySelectorAll('.track-item').forEach(i=>i.classList.remove('search-hidden'));const sc=document.getElementById('searchCount');if(sc)sc.textContent='';}
     });
     searchClear.addEventListener('click',()=>{
@@ -2239,6 +2282,24 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       const sc=document.getElementById('searchCount');if(sc)sc.textContent='';
       searchInput.focus();
     });
+
+    // Fuzzy search switch + sensitivity slider (Subfolders+ panel). Off = every typed word must appear exactly;
+    // on = typos are forgiven, and the slider sets how many (Exact ... Loose). Remembered and shared with the exe/web.
+    function setFuzzy(on,level,save){
+      fuzzyOn=!!on; if(typeof level==='number'&&isFinite(level)) fuzzyLevel=Math.max(0,Math.min(100,Math.round(level)));
+      if(save!==false){ try{ localStorage.setItem('impFuzzy',JSON.stringify({on:fuzzyOn,level:fuzzyLevel})); }catch(e){} }
+      const cb=document.getElementById('fuzzyOn'), sl=document.getElementById('fuzzyLevel'), lab=document.getElementById('fuzzyLevelLabel'), wrap=document.getElementById('fuzzySliderWrap');
+      if(cb) cb.checked=fuzzyOn; if(sl){ sl.value=fuzzyLevel; sl.disabled=!fuzzyOn; }
+      if(lab) lab.textContent=!fuzzyOn?'Off':(fuzzyLevel<20?'Very strict':fuzzyLevel<45?'Strict':fuzzyLevel<65?'Balanced':fuzzyLevel<85?'Loose':'Very loose');
+      if(wrap) wrap.style.opacity=fuzzyOn?'1':'.4';
+      const q=searchInput.value.trim(); if(q) applySearch(q);
+    }
+    (function(){
+      const cb=document.getElementById('fuzzyOn'), sl=document.getElementById('fuzzyLevel'); if(!cb||!sl) return;
+      cb.addEventListener('change',()=>setFuzzy(cb.checked,fuzzyLevel));
+      sl.addEventListener('input',()=>setFuzzy(fuzzyOn,+sl.value));
+      setFuzzy(fuzzyOn,fuzzyLevel,false);
+    })();
 
     // Search scope: defaults to file-name-only the very first time, then remembers whatever
     // was last picked. A custom dropdown (not a native <select>) so the hover color inside the
@@ -2684,43 +2745,124 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         }
         pos+=h.len; prevEnd=pos;
       }
-      return {ranges,frames,seconds,junk,runs};
+      return {ranges,frames,seconds,junk,runs,end:prevEnd,size:n};
     }
     async function readFileBytes(file){
       if(file.__filePath) return new Uint8Array(await require('fs').promises.readFile(file.__filePath));
       return new Uint8Array(await file.arrayBuffer());
     }
+    const fmtMS=s=>{ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+    // What the unreadable end of a damaged file looks like (goes into the log): zeros = a cut-off / padded
+    // download, "frame-like marks" = real audio the strict scan could not line up.
+    function describeTail(u8,r){
+      const from=Math.max(0,r.end), n=u8.length-from; if(n<=0) return 'no tail';
+      let zeros=0, sync=0; const lim=Math.min(n,200000);
+      for(let i=0;i<lim;i++){ const b=u8[from+i]; if(b===0) zeros++; if(b===0xFF&&i+1<lim&&(u8[from+i+1]&0xE0)===0xE0) sync++; }
+      const head=Array.from(u8.subarray(from,from+8)).map(c=>(c>=32&&c<127)?String.fromCharCode(c):'.').join('');
+      return `${n} tail bytes: ${Math.round(zeros*100/lim)}% zeros, ${sync} frame-like marks, starts "${head}"`;
+    }
+    function audioBufferToWavBlob(buf){
+      const ch=Math.min(2,buf.numberOfChannels), len=buf.length, sr=buf.sampleRate, dataLen=len*ch*2;
+      const ab=new ArrayBuffer(44+dataLen), dv=new DataView(ab);
+      const wr=(o,s)=>{ for(let i=0;i<s.length;i++) dv.setUint8(o+i,s.charCodeAt(i)); };
+      wr(0,'RIFF'); dv.setUint32(4,36+dataLen,true); wr(8,'WAVE'); wr(12,'fmt '); dv.setUint32(16,16,true); dv.setUint16(20,1,true);
+      dv.setUint16(22,ch,true); dv.setUint32(24,sr,true); dv.setUint32(28,sr*ch*2,true); dv.setUint16(32,ch*2,true); dv.setUint16(34,16,true);
+      wr(36,'data'); dv.setUint32(40,dataLen,true);
+      const chans=[]; for(let c=0;c<ch;c++) chans.push(buf.getChannelData(c));
+      let o=44;
+      for(let i=0;i<len;i++) for(let c=0;c<ch;c++){ let s=chans[c][i]; s=s<-1?-1:(s>1?1:s); dv.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); o+=2; }
+      return new Blob([ab],{type:'audio/wav'});
+    }
+    async function decodeWhole(u8){
+      if(u8.length>80*1024*1024) return null;
+      try{ return await audioContext.decodeAudioData(u8.buffer.slice(u8.byteOffset,u8.byteOffset+u8.byteLength)); }catch(e){ return null; }
+    }
+    // Builds the best playable copy of a damaged mp3: a whole-file decode (exact length, plays to its real end),
+    // or failing that the original with every junk/stray-tag/bad-header byte cut out.
+    async function buildRepaired(u8){
+      const r=scanMp3(u8), dec=await decodeWhole(u8), decSec=dec?dec.duration:0;
+      const out={url:null,kind:null,scanSec:r.seconds,decSec,realSec:Math.max(r.seconds,decSec),junk:r.junk,frames:r.frames,tail:describeTail(u8,r)};
+      if(dec && decSec>=Math.max(1,r.seconds-1) && decSec<=1800){ out.url=URL.createObjectURL(audioBufferToWavBlob(dec)); out.kind='wav'; }
+      else if(r.frames){ out.url=URL.createObjectURL(new Blob(r.ranges.map(([a,b])=>u8.subarray(a,b)),{type:'audio/mpeg'})); out.kind='clean'; }
+      return out;
+    }
+    // At most 3 repaired copies stay in memory; older ones are dropped and simply rebuilt if that song plays again.
+    const repairedUrls=[];
+    function keepRepaired(file,url){
+      const old=urlCache[file.name]; if(old&&old!==url&&old.startsWith('blob:')){ try{ URL.revokeObjectURL(old); }catch(e){} }
+      urlCache[file.name]=url;
+      const i=repairedUrls.findIndex(x=>x.file===file); if(i>=0) repairedUrls.splice(i,1);
+      repairedUrls.push({file,url});
+      let guard=repairedUrls.length;
+      while(repairedUrls.length>3&&guard-->0){
+        const o=repairedUrls.shift();
+        if(o.file===currentTrack){ repairedUrls.push(o); continue; }
+        try{ URL.revokeObjectURL(o.url); }catch(e){}
+        if(urlCache[o.file.name]===o.url) delete urlCache[o.file.name];
+        o.file._healed=false; o.file._healTried=false; o.file._scanned=false;
+      }
+    }
+    function rememberHealed(name){
+      try{ const h=JSON.parse(localStorage.getItem('impHealed')||'[]'); if(!h.includes(name)){ h.push(name); localStorage.setItem('impHealed',JSON.stringify(h)); } }catch(e){}
+    }
+    function swapSrc(elem,url,t0,play){
+      elem.src=url; elem.load();
+      const go=()=>{ elem.removeEventListener('loadedmetadata',go); try{ elem.currentTime=Math.max(0,t0); }catch(e){} applyPlaybackRate(); if(play) elem.play().catch(()=>{}); };
+      elem.addEventListener('loadedmetadata',go);
+    }
+    const damagedMsg=(file,headerDur,b)=>`"${file.name.replace(/\.[^.]+$/,'')}" is damaged: its header says ${fmtMS(headerDur)} but the audio only runs to ${fmtMS(b.realSec)}. Using a repaired copy, so the length is right and it ends cleanly.`;
     async function healMp3(file,elem,stoppedAt,headerDur){
       try{
         const u8=await readFileBytes(file);
-        const r=scanMp3(u8);
-        impNote('heal-scan',{currentTime:Math.round(stoppedAt*10)/10,duration:Math.round(headerDur*10)/10,from:`frames say ${r.seconds.toFixed(1)}s, junk bytes ${r.junk}, pieces ${r.ranges.length}`});
-        if(!r.frames||r.seconds<stoppedAt+3) return false;     // the file's audio really does end there
-        const blob=new Blob(r.ranges.map(([a,b])=>u8.subarray(a,b)),{type:'audio/mpeg'});
-        const url=URL.createObjectURL(blob);
-        try{ const old=urlCache[file.name]; if(old&&old.startsWith('blob:')) URL.revokeObjectURL(old); }catch(e){}
-        urlCache[file.name]=url; file._healed=true; if(window.__stats) window.__stats.repairs++;
-        try{ const h=JSON.parse(localStorage.getItem('impHealed')||'[]'); if(!h.includes(file.name)){ h.push(file.name); localStorage.setItem('impHealed',JSON.stringify(h)); } }catch(e){}
+        const b=await buildRepaired(u8);
+        impNote('heal-scan',{currentTime:Math.round(stoppedAt*10)/10,duration:Math.round(headerDur*10)/10,from:`frames say ${b.scanSec.toFixed(1)}s, full decode ${b.decSec?b.decSec.toFixed(1)+'s':'n/a'}, junk bytes ${b.junk}; ${b.tail}`});
+        if(!b.url) return false;
+        keepRepaired(file,b.url); file._healed=true; rememberHealed(file.name); if(window.__stats) window.__stats.repairs++;
+        if(b.realSec<stoppedAt+3){      // the audio really does stop here: nothing more to play, but next time the length will be right
+          impToast(damagedMsg(file,headerDur,b));
+          return false;
+        }
         if(currentTrack!==file) return false;
-        elem.src=url; elem.load();
-        const go=()=>{ elem.removeEventListener('loadedmetadata',go); try{ elem.currentTime=Math.max(0,stoppedAt-0.2); }catch(e){} applyPlaybackRate(); elem.play().catch(()=>{}); };
-        elem.addEventListener('loadedmetadata',go);
+        swapSrc(elem,b.url,stoppedAt-0.2,true);
         return true;
       }catch(e){ impNote('heal-failed',{from:String(e&&e.message||e)}); return false; }
     }
-    // songs that were repaired once get their cleaned copy straight away next time
+    // Catches the problem BEFORE it can skip: when an mp3 starts, compare the length its header claims with
+    // the audio actually in the file. A big gap means the song would be cut short (or end early), so the
+    // repaired copy is swapped in right away, keeping the position.
+    async function proactiveCheck(el){
+      try{
+        const f=currentTrack;
+        if(!f||el!==audio||el!==(currentMediaElement||audio)||!f.name.toLowerCase().endsWith('.mp3')||f._scanned||f._healed||isAlarmActive) return;
+        const d=el.duration; if(!isFinite(d)||d<=0) return;
+        f._scanned=true;
+        await new Promise(r=>setTimeout(r,400));
+        if(currentTrack!==f) return;
+        const u8=await readFileBytes(f), r=scanMp3(u8);
+        if(!r.frames||Math.abs(d-r.seconds)<=4) return;
+        const b=await buildRepaired(u8);
+        if(!b.url) return;
+        if(Math.abs(d-b.realSec)<=4){ try{ URL.revokeObjectURL(b.url); }catch(e){} return; }   // the decode agrees with the header after all
+        impNote('heal-early',{currentTime:Math.round(el.currentTime*10)/10,duration:Math.round(d*10)/10,from:`header ${d.toFixed(1)}s vs audio ${b.realSec.toFixed(1)}s (frames ${b.scanSec.toFixed(1)}s, decode ${b.decSec?b.decSec.toFixed(1)+'s':'n/a'}); ${b.tail}`});
+        keepRepaired(f,b.url); f._healed=true; rememberHealed(f.name); if(window.__stats) window.__stats.repairs++;
+        if(currentTrack!==f) return;
+        impToast(damagedMsg(f,d,b));
+        swapSrc(el,b.url,el.currentTime,!el.paused);
+      }catch(e){}
+    }
+    // songs that were repaired once get their repaired copy straight away next time
     async function preHealIfKnown(file){
       try{
         if(file._healed||!file.name.toLowerCase().endsWith('.mp3')) return;
         const h=JSON.parse(localStorage.getItem('impHealed')||'[]'); if(!h.includes(file.name)) return;
-        const u8=await readFileBytes(file); const r=scanMp3(u8); if(!r.frames) return;
-        const url=URL.createObjectURL(new Blob(r.ranges.map(([a,b])=>u8.subarray(a,b)),{type:'audio/mpeg'}));
-        urlCache[file.name]=url; file._healed=true; file._healTried=true;
+        const b=await buildRepaired(await readFileBytes(file)); if(!b.url) return;
+        keepRepaired(file,b.url); file._healed=true; file._healTried=true; file._scanned=true;
       }catch(e){}
     }
 
     [audio,video].forEach(el=>{
       el.addEventListener('loadstart',()=>{ el._lt=null; });
+      el.addEventListener('loadedmetadata',()=>{ proactiveCheck(el); });
       el.addEventListener('timeupdate',()=>{ { const n=performance.now(); if(!el.paused&&!el.seeking&&el._tu&&n-el._tu<1500&&window.__stats) window.__stats.listen+=(n-el._tu)/1000; el._tu=n; } if(!el.ended&&isFinite(el.duration)&&el.currentTime<el.duration-0.2) el._lt=el.currentTime; });
     });
     (function themeUI(){
@@ -2748,7 +2890,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     })();
     // ---- Settings shared between the web page and the exe (a small file in the music folder) ----
     (function settingsSync(){
-      const KEYS=['impTheme','impSliders','impFavorites','impQueueMode','impSearchScope'];
+      const KEYS=['impTheme','impSliders','impFavorites','impQueueMode','impSearchScope','impFuzzy'];
       let hooks=null, applying=false, writeT=null;
       const nativeSet=Storage.prototype.setItem;
       Storage.prototype.setItem=function(k,v){
@@ -2770,6 +2912,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
             if(favMode) refreshDim(); updateFilterCount(); } }catch(e){}
           const qm=obj.data.impQueueMode; if(qm==='fifo'||qm==='lifo') setQueueMode(qm);
           const sc=obj.data.impSearchScope; if(sc&&SCOPE_LABELS[sc]) setSearchScope(sc);
+          try{ const fz=JSON.parse(obj.data.impFuzzy||'null'); if(fz) setFuzzy(fz.on!==false,fz.level,false); }catch(e){}
         } finally { applying=false; }
       }
       async function sync(){
@@ -2803,7 +2946,15 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         if(ev==='error'&&window.__stats) window.__stats.mediaErrors++;
         if(ev!=='error') return;
         if(errTrack!==currentTrack){ errTrack=currentTrack; errTries=0; }
-        if(errTries++<1) recoverStalledMedia(); else playNextTrack();
+        const oldWay=()=>{ if(errTries++<1) recoverStalledMedia(); else playNextTrack(); };
+        // a decode error part-way through an mp3 used to be retried once and then skipped, every time, at the same
+        // spot. Now the file is repaired first and playback carries on from where it broke.
+        if(currentTrack.name.toLowerCase().endsWith('.mp3') && !currentTrack._healTried){
+          const hf=currentTrack; hf._healTried=true;
+          healMp3(hf,el,el.currentTime||0,el.duration).then(ok=>{ if(!ok && currentTrack===hf) oldWay(); });
+          return;
+        }
+        oldWay();
       }));
     });
     (function watchdog(){
@@ -3236,6 +3387,66 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         forgetBtn.style.display = 'none'; statusEl.textContent = 'Folder forgotten.';
         setManualPickerVisible(true);
       });
+      // ── Live library (browser): when you come back to the tab, new songs in the folder are picked up without a reload ──
+      let libBusy = false;
+      const nameKey = n => n.toLowerCase().trim();
+      async function walkNew(dir, p, known, out) {
+        for await (const [name, entry] of dir.entries()) {
+          if (entry.kind === 'file') {
+            const l = name.toLowerCase();
+            if (l.endsWith('.mp3') || l.endsWith('.mp4')) { const rel = p + '/' + name; if (!known.has(rel)) out.push({ entry, rel, name }); }
+          } else if (entry.kind === 'directory') {
+            if (name.toLowerCase() === 'lyrics') continue;
+            await walkNew(entry, p + '/' + name, known, out);
+          }
+        }
+      }
+      async function syncNewFiles() {
+        if (libBusy || isLoadingFolder || !currentHandle || document.hidden) return;
+        libBusy = true;
+        try {
+          if ((await currentHandle.queryPermission({ mode: 'read' })) !== 'granted') return;
+          const known = new Set(playlist.map(f => f.webkitRelativePath));
+          const cands = []; await walkNew(currentHandle, currentHandle.name, known, cands);
+          if (!cands.length) return;
+          const byName = new Map(playlist.map(f => [nameKey(f.name), f]));
+          const fresh = []; let moved = 0; const now = Date.now();
+          for (const c of cands) {
+            let file; try { file = await c.entry.getFile(); } catch(e) { continue; }
+            if (now - file.lastModified < 2500) continue;                         // still being copied in - next check gets it
+            Object.defineProperty(file, 'webkitRelativePath', { value: c.rel, writable: false });
+            const old = byName.get(nameKey(c.name));
+            if (old) {
+              if (old !== currentTrack) {                                          // same song, new place (moved by the sorter)
+                let gone = false; try { await old.slice(0, 1).arrayBuffer(); } catch(e) { gone = true; }
+                if (gone) {
+                  file._folder = detectFolder(file); file._media = old._media; file.metadata = old.metadata; file.extraMeta = old.extraMeta;
+                  const i = playlist.indexOf(old); if (i >= 0) playlist[i] = file;
+                  for (let k = 0; k < playQueue.length; k++) if (playQueue[k] === old) playQueue[k] = file;
+                  for (let k = 0; k < playHistory.length; k++) if (playHistory[k] === old) playHistory[k] = file;
+                  const u = urlCache[old.name]; if (u && u.startsWith('blob:')) { try { URL.revokeObjectURL(u); } catch(e) {} }
+                  delete urlCache[old.name]; moved++;
+                }
+              }
+              continue;
+            }
+            if (ALARM_FILE_RE.test(c.name)) { addFileToPlaylist(file); continue; }
+            fresh.push(file);
+          }
+          const n = insertNewTracks(fresh);
+          if (n || moved) {
+            const sc = playlistDiv.scrollTop;
+            await updatePlaylistDisplay();
+            playlistDiv.scrollTop = sc;
+            scheduleStats();
+            statusEl.textContent = `✅ ${currentHandle.name} — ${playlist.length} tracks` + (n ? ` (+${n} new)` : '');
+          }
+        } catch(e) { console.warn('library sync failed', e); }
+        finally { libBusy = false; }
+      }
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(syncNewFiles, 500); });
+      window.addEventListener('focus', () => setTimeout(syncNewFiles, 500));
+      setInterval(() => { if (!document.hidden) syncNewFiles(); }, 90000);
       setTimeout(tryAutoRestore, 300);
     })();
 
@@ -3490,7 +3701,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
   css.textContent='#imp-exe-banner{display:inline-block;box-sizing:border-box;max-width:calc(100% - 230px);margin:0 0 12px 6px;background:var(--bg);border:2px solid var(--fg);padding:7px 14px;border-radius:6px;font:12px sans-serif;box-shadow:0 4px 10px rgba(0,0,0,.5);transition:all .25s ease-in-out}#imp-exe-banner:hover{box-shadow:0 0 22px var(--fg),0 4px 15px rgba(0,0,0,.7);transform:scale(1.02)}#imp-exe-banner a,#imp-exe-banner a:visited{color:var(--fg);text-decoration:underline;font-weight:bold}@media(max-width:700px){#imp-exe-banner{max-width:calc(100% - 96px);font-size:11px;padding:6px 10px}}';
   document.head.appendChild(css);
   var d=document.createElement('div'); d.id='imp-exe-banner';
-  d.innerHTML='<a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank" rel="noopener">Install Inflated Media For Windows 10 (64-bit) Faster Than Ever Before!  Last updated: 11/7/2026</a>';
+  d.innerHTML='<a href="https://drive.google.com/drive/folders/1tJ4pnF4x-uMJNlCQy_6Qpew39bYxCYgb?usp=sharing" target="_blank" rel="noopener">Install Inflated Media For Windows 10 (64-bit) Faster Than Ever Before!  Last updated: 11/1/2026</a>';
   document.body.insertBefore(d,document.body.firstChild);
 })();
 </script>
