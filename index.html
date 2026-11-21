@@ -95,7 +95,6 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     #videoContainer { display: none; margin-top: 10px; border: 2px solid var(--fg); border-radius: 8px;
       overflow: hidden; max-width: 320px; }
     #videoPlayer { width: 100%; display: block; }
-    #pipBtn { margin-top: 8px; }
     input[type="range"] { -webkit-appearance: none; appearance: none; height: 8px; background: var(--surface);
       border: 1px solid var(--fg); border-radius: 5px; outline: none; cursor: pointer; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
@@ -200,10 +199,10 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         display: flex; flex-direction: row; gap: 14px; align-items: stretch; margin-top: 10px;
       }
       #videoWrapper.video-active #videoContainer {
-        flex: 0 0 clamp(320px, 34%, 480px); max-width: 480px; margin-top: 0;
-        display: flex; flex-direction: column;
+        flex: 0 0 clamp(320px, 34%, 480px); max-width: 560px; margin-top: 0;
+        position: relative; background: #000;   /* its height is always the track-list / sliders row - the video can never make it taller */
       }
-      #videoWrapper.video-active #videoPlayer { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+      #videoWrapper.video-active #videoPlayer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
       #videoWrapper.video-active #mainLayout { flex: 1 1 0; min-width: 0; margin-top: 0; }
       #videoWrapper.video-active #mediaCol { flex: 0 0 55% !important; }
     }
@@ -248,6 +247,16 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
 
     #subfoldersPanel { display: none; margin-top: 14px; border: 1px solid rgba(var(--fg-rgb),0.4);
       border-radius: 8px; padding: 16px 18px; background: var(--surface-deep); }
+    .sf-sec { border: 1px solid rgba(var(--fg-rgb),0.25); border-radius: 6px; margin: 8px 0; background: var(--surface); }
+    .sf-sec > summary { cursor: pointer; padding: 9px 12px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(var(--fg-rgb),0.7); list-style: none; user-select: none; }
+    .sf-sec > summary::-webkit-details-marker { display: none; }
+    .sf-sec > summary::before { content: '\25B8'; display: inline-block; width: 1.3em; color: var(--fg); }
+    .sf-sec[open] > summary::before { content: '\25BE'; }
+    .sf-sec > summary:hover { color: var(--fg); }
+    .sf-sec[open] > summary { border-bottom: 1px solid rgba(var(--fg-rgb),0.15); }
+    .sf-body { padding: 12px 14px; }
+    #perfToggle { display: none !important; }   /* the Performance tab itself is the toggle now */
     #subfoldersPanel h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
       color: rgba(var(--fg-rgb),0.5); font-weight: normal; }
     #subfoldersPanel p { margin: 0 0 14px; font-size: 12px; color: rgba(var(--fg-rgb),0.6); line-height: 1.5; }
@@ -282,6 +291,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       #videoContainer { max-width: 100%; }
       #bottomPanel { flex-direction: column !important; }
       #alarmCol, #lyricsCol { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(var(--fg-rgb),0.2); }
+      #lyricsBody { min-height: 170px; }
     }
     @supports (-webkit-touch-callout: none) {
       body { padding-bottom: env(safe-area-inset-bottom, 16px); }
@@ -345,7 +355,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     .lyrics-ctrl-btn.wrong { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
     .lyrics-ctrl-btn.wrong:hover { background: var(--bad); color: var(--bg); }
 
-    #lyricsBody { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    #lyricsBody { display: flex; flex-direction: column; flex: 1; overflow: hidden; position: relative; min-height: 112px; }
 
     /* Context lines (prev/next shown dimmer) */
     #lyricsContext { display: flex; flex-direction: column; justify-content: center; gap: 2px; flex: 1; overflow: hidden; }
@@ -362,7 +372,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     /* Full lyrics view (toggled) */
     #lyricsFullView {
       display: none;
-      flex: 1;
+      position: absolute; left: 0; right: 0; top: 6px; bottom: 0;   /* fills the same box the line view uses - never makes the panel taller */
       overflow-y: auto;
       background: var(--surface-deep);
       border: 1px solid rgba(var(--fg-rgb),0.15);
@@ -370,10 +380,11 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       padding: 10px 12px;
       font-size: 12px;
       line-height: 1.7;
-      color: rgba(var(--fg-rgb),0.7);
-      white-space: pre-wrap;
-      margin-top: 6px;
+      color: rgba(var(--fg-rgb),0.55);
+      box-sizing: border-box;
     }
+    .lyr-full-line { padding: 1px 0; overflow-wrap: anywhere; }
+    .lyr-full-line.active { color: #fff; font-weight: bold; }
 
     #lyricsStatus {
       font-size: 10px; color: rgba(var(--fg-rgb),0.28);
@@ -496,7 +507,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
   </div>
 
   <div id="videoWrapper">
-    <div id="videoContainer"><video id="videoPlayer" controls playsinline webkit-playsinline></video><button id="pipBtn">Picture-in-Picture</button></div>
+    <div id="videoContainer"><video id="videoPlayer" controls controlslist="nodownload noplaybackrate" disablepictureinpicture disableremoteplayback playsinline webkit-playsinline></video></div>
     <div id="mainLayout">
       <div id="mediaPanel">
         <div id="mediaCol">
@@ -508,7 +519,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
               <div class="viz-label">Audio Visualizer</div>
               <canvas id="visualizerCanvas" width="600" height="90"></canvas>
             </div>
-            <h3 id="resetSlidersTitle" title="Click to reset speed, frequency, pitch and quality to normal" style="margin:8px 0 14px;cursor:pointer;">Volume Control &amp; Playback Speed</h3>
+            <h3 id="resetSlidersTitle" title="Click to reset speed, frequency, pitch and quality to normal" style="margin:8px 0 14px;cursor:pointer;">Volume &amp; Playback Control</h3>
             <div class="slider-grid">
               <div class="slider-col">
                 <label>Volume</label>
@@ -563,14 +574,14 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           <div class="lyrics-ctx-line" id="lyricsCtx3"></div>
         </div>
         <div id="lyricsFullView"></div>
-        <div id="lyricsNoTs">⚠ No timestamps — evenly distributed</div>
+        <div id="lyricsNoTs">⚠ No timestamps — spread across the song</div>
         <div id="lyricsStatus">Load your music folder — lyrics load automatically from the Lyrics subfolder.</div>
       </div>
     </div>
   </div><!-- /#bottomPanel -->
 
   <div id="subfoldersPanel">
-    <h4>📁 Folder Structure Reference</h4>
+    <details class="sf-sec"><summary>📁 Folder Structure Reference</summary><div class="sf-body">
     <p>Arrange your files in this exact layout to unlock the <strong>Best Tracks</strong> and <strong>Good Tracks</strong> filter buttons.</p>
     <div class="folder-tree">
       <div><span class="ft-root">📁 Music@mp3z&amp;4</span> &nbsp;<span class="ft-dim">← root folder — upload this</span></div>
@@ -586,7 +597,9 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     <p style="margin:10px 0 0; font-size:11px; color:rgba(var(--fg-rgb),0.4);">
       ⚠️ Drag-and-drop folder upload requires Chrome/Edge. Safari on iOS supports individual files only.
     </p>
-    <h4 style="margin-top:18px;">⌨️ Keyboard Shortcuts <span style="font-size:10px;color:rgba(var(--fg-rgb),0.35);font-weight:normal;">(desktop only)</span></h4>
+    
+    </div></details>
+    <details class="sf-sec"><summary>⌨️ Keyboard Shortcuts <span style="font-size:10px;color:rgba(var(--fg-rgb),0.35);font-weight:normal;">(desktop only)</span></summary><div class="sf-body">
     <div class="folder-tree" style="line-height:2;">
       <div><span style="color:var(--fg);font-weight:bold;">Space</span> &nbsp;&nbsp;&nbsp;<span class="ft-dim">Play / Pause</span></div>
       <div><span style="color:var(--fg);font-weight:bold;">← →</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Seek -5s / +5s</span></div>
@@ -594,15 +607,27 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       <div><span style="color:var(--fg);font-weight:bold;">P</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Previous</span></div>
       <div><span style="color:var(--fg);font-weight:bold;">M</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Mute / Unmute</span></div>
       <div><span style="color:var(--fg);font-weight:bold;">↑ ↓</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume ±5%</span></div>
+      <div><span style="color:var(--fg);font-weight:bold;">H</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Hide the current video</span></div>
+      <div><span style="color:var(--fg);font-weight:bold;">V</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dim">Volume normalizer (evens out loud and quiet songs) — current status: <strong id="normStatus" style="color:var(--fg);">OFF</strong></span></div>
     </div>
-    <h4 style="margin-top:18px;">▶️ Song Queue</h4>
+    
+    </div></details>
+    <details class="sf-sec"><summary>🎬 Video</summary><div class="sf-body">
+    <label id="hideVideosWrap" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:bold;"><input type="checkbox" id="hideVideosChk"> Hide Videos</label>
+    <p style="margin:8px 0 0;">When checked, mp4s play as sound only and the video window never appears. Unchecked, videos show beside the track list; press <strong>H</strong> to hide the video that's playing (the next video shows again).</p>
+    </div></details>
+    <details class="sf-sec"><summary>▶️ Song Queue</summary><div class="sf-body">
     <p>Current queue order: <strong id="queueModeDisplay">LIFO (Last-In, First-Out)</strong> (also shown under the clock). <strong>Triple-click</strong> any Queue button, fast, to switch between the two orders. Your choice is remembered.</p>
     <p><strong>LIFO (Last-In, First-Out)</strong> — the default. The <em>last</em> song you queued plays first and the first one you queued plays last, so the most recent thing you wanted to hear jumps to the front.</p>
     <p><strong>FIFO (First-In, First-Out)</strong> — songs play in the order you queued them: first queued plays first, last queued plays last.</p>
     <p>Either way: once a queued song starts, it's off the queue. When the queue runs empty, normal playback just continues on from wherever that last queued song was in the list. Click a queued track's button once to add or remove just that song, and <strong>double-click</strong> any Queue button to clear the whole queue at once.</p>
-    <h4 style="margin-top:18px;">🎚️ Track Filters</h4>
+    
+    </div></details>
+    <details class="sf-sec"><summary>🎚️ Track Filters</summary><div class="sf-body">
     <p><strong>Best Tracks</strong> / <strong>Good Tracks</strong> only play songs from that folder tier. <strong>Mp3</strong> / <strong>Mp4</strong> only play that file format (the other format is skipped, not removed). Best/Good are one-at-a-time, Mp3/Mp4 are one-at-a-time, and the two groups combine (e.g. Best + Mp3). Click an active button again to turn it off. Everything starts OFF each time the player opens; songs outside the active filter are dimmed in the list.</p>
-    <h4 style="margin-top:18px;">🔎 Search Modes</h4>
+    
+    </div></details>
+    <details class="sf-sec"><summary>🔎 Search Modes</summary><div class="sf-body">
     <p>The small dropdown next to the search bar (desktop only) controls what your search actually looks at: <strong>Name</strong> matches file names only, <strong>Artist</strong> matches the creator (the artist tag and the artist folder), <strong>Lyrics</strong> matches lyrics text only, and <strong>All</strong> checks names, artists, albums and lyrics together. It remembers whatever you last picked. If you don't have any matching lyrics <code>.txt</code> files loaded, Lyrics and Both won't find anything extra beyond what Name already would — that's expected, not a bug.</p>
     <p>Search forgives typos and missing punctuation (it matches each word loosely, in any order), and the <strong>Album</strong> mode searches the album tag. <strong>Click a result</strong> and the player plays down the remaining results, then goes back to the normal playlist right after the song that was playing before. Clearing the search ends the detour.</p>
     <div id="fuzzyBox" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;border:1px solid var(--fg);border-radius:6px;background:var(--surface);max-width:640px;">
@@ -614,11 +639,15 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
         <span id="fuzzyLevelLabel" style="min-width:74px;font-size:12px;font-weight:bold;text-align:right;">Balanced</span>
       </span>
     </div>
-    <p><strong>&#9733; (Favorites)</strong> plays every song you starred, top to bottom, and switches off the Best/Good and Mp3/Mp4 filters. The counter next to PIP Console shows how many songs the active filters leave. Clicking <em>Volume Control &amp; Playback Speed</em> resets speed, frequency, pitch and quality (not volume). <strong>Quality</strong> only lowers quality from the file's own level (it can't improve it); all sliders are remembered. Alarms always keep one blank template, and a ringing alarm stops itself after 15 minutes.</p>
-    <h4 style="margin-top:18px;">🔔 Custom Alarm Sound</h4>
+    <p><strong>&#9733; (Favorites)</strong> plays every song you starred, top to bottom, and switches off the Best/Good and Mp3/Mp4 filters. The counter next to PIP Console shows how many songs the active filters leave. Clicking <em>Volume &amp; Playback Control</em> resets speed, frequency, pitch and quality (not volume). <strong>Quality</strong> only lowers quality from the file's own level (it can't improve it); all sliders are remembered. Alarms always keep one blank template, and a ringing alarm stops itself after 15 minutes.</p>
+    
+    </div></details>
+    <details class="sf-sec"><summary>🔔 Custom Alarm Sound</summary><div class="sf-body">
     <p>Name any .mp3/.mp4 file <strong>Add_Alarm</strong> and upload it with your music. Multiple variants work: Add_Alarm.mp3, Add_Alarm(1).mp3, etc.</p>
     <div id="customAlarmInfo" style="margin-top:8px;font-size:12px;color:rgba(var(--fg-rgb),0.65);"></div>
-    <h4 style="margin-top:18px;">&#127912; Themes</h4>
+    
+    </div></details>
+    <details class="sf-sec"><summary>&#127912; Themes</summary><div class="sf-body">
     <div id="themeButtons">
       <button class="toggle-btn" data-theme="default">Default</button>
       <button class="toggle-btn" data-theme="paper">Paper</button>
@@ -631,7 +660,11 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       <span>UI color <input type="color" id="ctFg" value="#00d8ff"> <input type="text" id="ctFgHex" maxlength="7" value="#00d8ff"></span>
     </div>
 
-    <h4 style="margin-top:18px;">&#128202; Performance</h4>
+    
+    <div style="margin-top:14px;"><label id="perfectFitWrap" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:bold;"><input type="checkbox" id="perfectFitChk"> Perfect Fit</label>
+    <span class="ft-dim" style="margin-left:8px;">scales the whole page down so everything is in view without scrolling (desktop only)</span></div>
+    </div></details>
+    <details class="sf-sec" id="perfSec"><summary>&#128202; Performance</summary><div class="sf-body">
     <button id="perfToggle" class="toggle-btn">Performance Info &#9656;</button>
     <div id="perfBody">
       <div id="perfStatus"></div><div id="perfReasons"></div>
@@ -639,6 +672,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       <div class="perf-cols" id="perfCols"></div>
       <table class="perf-tbl" id="perfLog"></table>
     </div>
+    </div></details>
   </div>
 
   <audio id="audioPlayer" controls style="display:none;" crossorigin="anonymous"></audio>
@@ -652,7 +686,6 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     const audio              = document.getElementById('audioPlayer');
     const video              = document.getElementById('videoPlayer');
     const videoContainer     = document.getElementById('videoContainer');
-    const pipBtn             = document.getElementById('pipBtn');
     const alarmSound         = document.getElementById('alarmSound');
     const nowPlaying         = document.getElementById('nowPlaying');
     const timerDisplay       = document.getElementById('timer');
@@ -805,37 +838,32 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     let searchRun = null; // {files:[remaining search results], resumeIdx} while playing down search results
     let currentRandomPause = null, randomPauseTimer = null;
     let isAlarmActive = false, savedPlaybackState = null, lastAlarmTime = null;
-    let urlCache = {}, playbackRetryCount = 0, isVideoHidden = false;
+    let urlCache = {}, playbackRetryCount = 0, isVideoHidden = false, hideAllVideos = false;
     let pitchSemitones = 0;
     let customAlarmFiles = [];
     let isMuted = false, preMuteVolume = 100;
 
     function adjustPlaylistToVideo() {
       if (!window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) return;
-      const vw = video.videoWidth, vh = video.videoHeight;
-      if (!vw || !vh) return;
-      const aspectRatio = vh / vw;
-      const DEFAULT_H = 280, MIN_H = 280, MAX_H = 560;
-      const vcEl = document.getElementById('videoContainer');
-      const colWidth = vcEl ? vcEl.offsetWidth : 320;
-      const renderedVideoH = colWidth * aspectRatio;
-      const pipBtnEl = document.getElementById('pipBtn');
-      let buttonRowH = 50;
-      if (pipBtnEl) {
-        const btnH = pipBtnEl.offsetHeight || 38;
-        const btnMargin = parseInt(getComputedStyle(pipBtnEl).marginTop) || 8;
-        buttonRowH = btnH + btnMargin + 8;
-      }
-      const totalVideoBlockH = renderedVideoH + buttonRowH;
-      let newH = renderedVideoH < DEFAULT_H * 0.85 ? DEFAULT_H :
-        Math.round(Math.min(MAX_H, Math.max(MIN_H, totalVideoBlockH)));
-      document.documentElement.style.setProperty('--playlist-height', newH + 'px'); requestAnimationFrame(fitPlaylist);
+      // the video box always matches the height of the track-list / sliders row (tall videos are scaled down
+      // inside it instead of stretching the page), so the list no longer grows to fit the video
+      document.documentElement.style.removeProperty('--playlist-height');
+      requestAnimationFrame(()=>{ fitPlaylist(); sizeVideoBox(); });
+    }
+    // width of the video box follows the video's shape (narrow for tall videos, wider for wide ones), height is the row's
+    function sizeVideoBox() {
+      if (!window.matchMedia('(pointer: fine) and (min-width: 700px)').matches || !videoWrapper.classList.contains('video-active')) { videoContainer.style.flex=''; return; }
+      const vw=video.videoWidth, vh=video.videoHeight, h=videoContainer.clientHeight;
+      if (!vw||!vh||!h) { videoContainer.style.flex=''; return; }
+      const maxW=Math.max(320,Math.min(560,Math.round(videoWrapper.clientWidth*0.4)));
+      videoContainer.style.flex='0 0 '+Math.round(Math.max(240,Math.min(maxW,h*vw/vh)))+'px';
     }
 
-    function setVideoActive(show) { _setVideoActive(show); requestAnimationFrame(()=>fitPlaylist()); setTimeout(()=>fitPlaylist(),300); }
+    function setVideoActive(show) { _setVideoActive(show); requestAnimationFrame(()=>{fitPlaylist();sizeVideoBox();}); setTimeout(()=>{fitPlaylist();sizeVideoBox();},300); }
     function _setVideoActive(show) {
       // the video is playing in the PIP console / native Picture-in-Picture, so the empty box on the page is hidden
       if ((typeof pipWin!=='undefined' && pipWin && pipMode==='modern') || document.pictureInPictureElement) show = false;
+      if (hideAllVideos) show = false;   // "Hide Videos" is checked under Subfolders+
       videoContainer.style.display = show ? 'block' : 'none';
       if (window.matchMedia('(pointer: fine) and (min-width: 700px)').matches) {
         videoWrapper.classList.toggle('video-active', show);
@@ -865,21 +893,37 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       alarmSound.src=URL.createObjectURL(new Blob([ab],{type:'audio/wav'}));
     })();
 
-    const hideVideoBtn = document.createElement('button');
-    hideVideoBtn.textContent = 'Hide Video';
-    Object.assign(hideVideoBtn.style,{marginTop:'8px',backgroundColor:'var(--fg)',color:'var(--bg)',border:'none',padding:'8px 12px',cursor:'pointer',borderRadius:'6px',fontWeight:'bold'});
-    pipBtn.parentNode.insertBefore(hideVideoBtn, pipBtn.nextSibling);
-    hideVideoBtn.addEventListener('click', async () => {
-      if (document.pictureInPictureElement) try{await document.exitPictureInPicture();}catch(e){}
-      videoContainer.style.display='none'; isVideoHidden=true; setVideoActive(false);
+    // Hide Videos (checkbox under Subfolders+): mp4s never show their video. The H key hides the video that's playing.
+    const hideVideosChk = document.getElementById('hideVideosChk');
+    try { hideAllVideos = localStorage.getItem('impHideVideos') === '1'; } catch(e) {}
+    hideVideosChk.checked = hideAllVideos;
+    hideVideosChk.addEventListener('change', () => {
+      hideAllVideos = hideVideosChk.checked;
+      try { localStorage.setItem('impHideVideos', hideAllVideos ? '1' : '0'); } catch(e) {}
+      isVideoHidden = false;
+      if (currentTrack && currentTrack.name.toLowerCase().endsWith('.mp4')) setVideoActive(true);   // shows it again, or hides it if the box is now checked
     });
-    video.addEventListener('enterpictureinpicture', () => setVideoActive(false));
-    video.addEventListener('leavepictureinpicture', () => { if (currentTrack && currentTrack.name.toLowerCase().endsWith('.mp4') && !isVideoHidden) setVideoActive(true); });
-    pipBtn.addEventListener('click', async () => {
-      try {
-        if (document.pictureInPictureElement) await document.exitPictureInPicture();
-        else if (video&&video.src){videoContainer.style.display='block';isVideoHidden=false;setVideoActive(true);await video.requestPictureInPicture();}
-      } catch(e){console.error("PiP error:",e);}
+    function hideCurrentVideo() {
+      if (hideAllVideos) return;
+      if (!currentTrack || !currentTrack.name.toLowerCase().endsWith('.mp4')) return;
+      if (videoContainer.style.display !== 'block') return;          // no video showing right now
+      isVideoHidden = true; setVideoActive(false);                    // the next video that plays shows again
+    }
+
+    // the speaker / volume bar on the video itself drives the same Volume slider as everything else
+    // (the Volume slider, the PIP console, the arrow keys and M), so they always show the same number
+    let nativePreMute = 100;
+    video.addEventListener('volumechange', () => {
+      if (window.__impProgMute) return;                      // the player muting the video on purpose (restoring a paused song)
+      if (video.muted) {                                     // speaker button = the same mute toggle as the console / M key
+        video.muted = false;
+        if (Number(volumeSlider.value) > 0) { nativePreMute = Number(volumeSlider.value); volumeSlider.value = 0; }
+        else volumeSlider.value = nativePreMute || 100;
+        volumeSlider.dispatchEvent(new Event('input'));
+        return;
+      }
+      const pct = Math.round(video.volume * 100);
+      if (pct !== Number(volumeSlider.value)) { volumeSlider.value = pct; volumeSlider.dispatchEvent(new Event('input')); }
     });
 
     function applyVol() {
@@ -1389,13 +1433,74 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       const item=playlistDiv.querySelector('.track-item:not(.search-hidden)'); if(!item) return;
       const pitch=item.offsetHeight+(parseFloat(getComputedStyle(item).marginBottom)||0); if(!pitch) return;
       const cc=document.querySelector('#controlsCol .volume-controls'); let need=280;
-      if(cc&&cc.lastElementChild){ need=cc.lastElementChild.getBoundingClientRect().bottom-cc.getBoundingClientRect().top+16; }
+      if(cc&&cc.lastElementChild){ const zk=cc.offsetHeight?cc.getBoundingClientRect().height/cc.offsetHeight:1; need=(cc.lastElementChild.getBoundingClientRect().bottom-cc.getBoundingClientRect().top)/(zk||1)+16; }
       const vh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--playlist-height'))||0;
       if(videoContainer.style.display==='block') need=Math.max(need,vh);
       const rows=Math.max(5,Math.ceil((need-20)/pitch)), h=rows*pitch+20;
       playlistDiv.style.height=h+'px'; playlistDiv.style.maxHeight=h+'px';
     }
-    window.addEventListener('resize',()=>requestAnimationFrame(fitPlaylist));
+    window.addEventListener('resize',()=>requestAnimationFrame(()=>{fitPlaylist();sizeVideoBox();}));
+
+    // ── Fit to screen (desktop only) ────────────────────────────────────────────
+    // Optional (Perfect Fit checkbox under Subfolders+ > Themes, off by default). When on and the page is taller than the window, the whole page is scaled down evenly (nothing moves or changes shape,
+    // it is just smaller) until all of it is in view at once. It never scales up, and never goes below 60% so text stays readable.
+    // The Subfolders+ panel itself is not counted (it is meant to be scrolled), and it recalculates by itself when the
+    // window is resized or the page grows / shrinks (video, alarms, visualizer...).
+    (function fitToScreen() {
+      const root = document.documentElement, MIN = 0.6;
+      let cur = 1, timer = null, enabled = false;
+      const chk = document.getElementById('perfectFitChk');
+      try { enabled = localStorage.getItem('impPerfectFit') === '1'; } catch(e) {}
+      chk.checked = enabled;
+      const desktop = () => window.matchMedia('(pointer: fine) and (min-width: 700px)').matches;
+      function pageH() {                                    // on-screen height of the page (without the Subfolders+ panel), margins included
+        const b = document.body, r = b.getBoundingClientRect(), k = b.offsetHeight ? r.height / b.offsetHeight : 1;
+        const mb = (parseFloat(getComputedStyle(b).marginBottom) || 0) * k;
+        if (subfoldersPanel.style.display === 'block') {   // panel open: measure down to where it starts, so ticking Perfect Fit works right away
+          const pr = subfoldersPanel.getBoundingClientRect();
+          return pr.top + window.scrollY - (parseFloat(getComputedStyle(subfoldersPanel).marginTop) || 0) * k + mb;
+        }
+        return r.bottom + window.scrollY + mb;
+      }
+      function setZ(z) {
+        cur = z;
+        if (z >= 0.999) root.style.removeProperty('zoom'); else root.style.zoom = z.toFixed(3);
+        try { fitPlaylist(); } catch(e) {}
+        try { sizeVideoBox(); } catch(e) {}
+      }
+      function fit() {
+        timer = null;
+        if (document.fullscreenElement) return;
+        if (!enabled || !desktop()) { if (cur !== 1) setZ(1); return; }
+        const avail = window.innerHeight - 1;
+        let h = pageH();
+        if (h <= avail && (cur >= 1 || h >= avail * 0.96)) return;      // already a good fit
+        setZ(1); h = pageH();
+        if (h <= avail) return;
+        let z = Math.max(MIN, avail / h);
+        for (let i = 0; i < 6; i++) {
+          setZ(z); h = pageH();
+          if (z <= MIN || (h <= avail && h >= avail * 0.985)) break;
+          z = Math.max(MIN, Math.min(1, z * avail / h));
+        }
+        if (h > avail && z > MIN) setZ(Math.max(MIN, z * avail / h));
+      }
+      const schedule = () => { if (!timer) timer = setTimeout(fit, 150); };
+      chk.addEventListener('change', () => {
+        enabled = chk.checked;
+        try { localStorage.setItem('impPerfectFit', enabled ? '1' : '0'); } catch(e) {}
+        if (!enabled) setZ(1);
+        schedule();
+      });
+      window.addEventListener('resize', schedule);
+      window.addEventListener('load', schedule);
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) { root.style.removeProperty('zoom'); } else { setZ(1); schedule(); }   // full screen video is never scaled
+      });
+      try { new ResizeObserver(schedule).observe(document.body); } catch(e) {}
+      subfoldersBtn.addEventListener('click', () => setTimeout(schedule, 50));
+      schedule();
+    })();
     let dragSrcIndex=-1;
     function setupDragEvents(item){
       item.addEventListener('dragstart',(e)=>{dragSrcIndex=parseInt(item.dataset.index);item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
@@ -1727,8 +1832,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       window.addEventListener('keydown',(e)=>{ if(e.key===' '&&!isTypingTarget(e.target)) e.preventDefault(); },true);
       document.addEventListener('keydown',(e)=>{
         if(isTypingTarget(e.target)) return;
-        // A focused slider/checkbox keeps its own arrow-key behaviour; only Space is ours.
-        if(e.target.tagName==='INPUT'&&e.key!==' ') return;
+        // A focused slider/checkbox keeps its own arrow keys; every other shortcut still works after clicking one.
+        if(e.target.tagName==='INPUT'&&e.key.indexOf('Arrow')===0) return;
         const elem=currentMediaElement||audio;
         switch(e.key){
           case ' ':e.preventDefault();if(!e.repeat)playPauseBtn.click();break;
@@ -1740,6 +1845,8 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
             if(kbMuted){volumeSlider.value=kbPreMuteVol;kbMuted=false;}
             else{kbPreMuteVol=volumeSlider.value;volumeSlider.value=0;kbMuted=true;}
             applyVol();break;
+          case 'h':case 'H':hideCurrentVideo();break;
+          case 'v':case 'V':toggleNormalizer();break;
           case 'ArrowUp':e.preventDefault();volumeSlider.value=Math.min(100,parseInt(volumeSlider.value)+5);applyVol();break;
           case 'ArrowDown':e.preventDefault();volumeSlider.value=Math.max(0,parseInt(volumeSlider.value)-5);applyVol();break;
         }
@@ -1814,7 +1921,12 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       if(pl) pl.classList.toggle('viz-expanded',isVisualizerEnabled);
       requestAnimationFrame(fitPlaylist);
     });
+    { // Performance has no second button inside it: opening / closing its tab is what shows / hides the info
+      const perfSec=document.getElementById('perfSec'), perfBtn=document.getElementById('perfToggle'), perfBody=document.getElementById('perfBody');
+      if(perfSec&&perfBtn&&perfBody) perfSec.addEventListener('toggle',()=>{ if(perfSec.open!==(perfBody.style.display==='block')) perfBtn.click(); });
+    }
     subfoldersBtn.addEventListener('click',()=>{
+      subfoldersPanel.querySelectorAll('details.sf-sec[open]').forEach(d=>{ d.open=false; });   // every tab is minimised again each time
       const show=subfoldersPanel.style.display!=='block';
       subfoldersPanel.style.display=show?'block':'none';
       subfoldersBtn.classList.toggle('active',show);
@@ -2572,6 +2684,7 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     let graphWanted=false;   // the audio-effects engine stays asleep (lighter, lower delay) until frequency / quality / visualizer is used
     function resumeAudioCtx(){ if(graphWanted&&audioContext.state==='suspended') audioContext.resume().catch(()=>{}); }
     document.addEventListener('click',resumeAudioCtx);
+    document.addEventListener('keydown',resumeAudioCtx);
     document.addEventListener('touchstart',resumeAudioCtx,{passive:true});
     const analyserNode=audioContext.createAnalyser(); analyserNode.fftSize=256; analyserNode.smoothingTimeConstant=0.82;
     const eqFilter=audioContext.createBiquadFilter(); eqFilter.type='highshelf'; eqFilter.frequency.value=2000; eqFilter.gain.value=0;
@@ -2591,6 +2704,118 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     audio.addEventListener('play',()=>connectToGraph(audio));
     video.addEventListener('play',()=>connectToGraph(video));
     function wantGraph(){ if(graphWanted) return; graphWanted=true; resumeAudioCtx(); const el=currentMediaElement; if(el&&!el.paused) connectToGraph(el); }
+
+    // ── Volume normalizer (V key) ───────────────────────────────────────────────
+    // Finds out how loud each song really is (it decodes the file once, or listens live while the song plays when the file
+    // is too big) and turns loud songs down / quiet songs up toward one common level, so they all sit at about the same
+    // volume. The Volume slider still decides how loud that common level is. What it learns is remembered for next time.
+    const NORM_TARGET_DB = -16, NORM_MAX_CUT = -18, NORM_MAX_BOOST = 12, NORM_DECODE_MAX = 60*1024*1024;
+    const normAn = audioContext.createAnalyser(); normAn.fftSize = 2048; normAn.smoothingTimeConstant = 0;
+    const normGain = audioContext.createGain();
+    const normLimiter = audioContext.createDynamicsCompressor();     // catches the peaks of songs that got turned up
+    normLimiter.threshold.value = -2; normLimiter.knee.value = 0; normLimiter.ratio.value = 20; normLimiter.attack.value = 0.002; normLimiter.release.value = 0.12;
+    normAn.connect(normGain); normGain.connect(normLimiter); normLimiter.connect(audioContext.destination);
+    let normOn = false, normTimer = null, normTrack = null, normMode = '', normBlocks = [], normSaved = false, normCache = {}, normSaveT = null;
+    try { normCache = JSON.parse(localStorage.getItem('impNormCache') || '{}') || {}; } catch(e) { normCache = {}; }
+    const normStatusEl = document.getElementById('normStatus');
+    const normBuf = new Float32Array(2048);
+    const normKey = f => f.name + '|' + (f.size || 0);
+    const normClamp = db => Math.max(NORM_MAX_CUT, Math.min(NORM_MAX_BOOST, db));
+    function normPersist() {
+      clearTimeout(normSaveT);
+      normSaveT = setTimeout(() => { try {
+        const k = Object.keys(normCache); if (k.length > 3000) k.slice(0, k.length - 3000).forEach(x => delete normCache[x]);
+        localStorage.setItem('impNormCache', JSON.stringify(normCache));
+      } catch(e) {} }, 1500);
+    }
+    function normSetDb(db) {
+      db = normClamp(db);
+      try { normGain.gain.setTargetAtTime(Math.pow(10, db / 20), audioContext.currentTime, 0.35); } catch(e) {}
+      if (normStatusEl && normOn) { const t = 'ON · this song ' + (db > 0.05 ? '+' : '') + db.toFixed(1) + ' dB'; if (normStatusEl.textContent !== t) normStatusEl.textContent = t; }
+    }
+    // loudness (dB) from a list of block powers: ignore silence, then anything 10 dB under the average
+    function normRelGated(powers) {
+      const abs = powers.filter(p => p > 1e-5); if (!abs.length) return null;
+      let m = abs.reduce((a, b) => a + b, 0) / abs.length;
+      const rel = abs.filter(p => p >= m * 0.1);
+      if (rel.length) m = rel.reduce((a, b) => a + b, 0) / rel.length;
+      return 10 * Math.log10(m);
+    }
+    async function normAnalyse(file) {
+      if (!file || (file.size && file.size > NORM_DECODE_MAX)) return null;
+      let bytes;
+      if (file.__filePath && typeof require === 'function') { const b = await require('fs').promises.readFile(file.__filePath); bytes = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); }
+      else if (typeof file.arrayBuffer === 'function') bytes = await file.arrayBuffer();
+      else return null;
+      const ab = await audioContext.decodeAudioData(bytes);
+      const sr = ab.sampleRate, blk = Math.max(1, Math.round(sr * 0.4)), nCh = ab.numberOfChannels, len = ab.length;
+      const a = 1 / (1 + 2 * Math.PI * 100 / sr);                    // gentle high-pass so deep bass doesn't count as "loud"
+      const chans = [], st = [];
+      for (let c = 0; c < nCh; c++) { chans.push(ab.getChannelData(c)); st.push({ px: 0, py: 0 }); }
+      const powers = []; let peak = 0;
+      for (let s = 0, bi = 0; s < len; s += blk, bi++) {
+        const e = Math.min(len, s + blk); let sum = 0;
+        for (let c = 0; c < nCh; c++) {
+          const d = chans[c]; let px = st[c].px, py = st[c].py, acc = 0;
+          for (let i = s; i < e; i++) { const x = d[i], y = a * (py + x - px); px = x; py = y; acc += y * y; const ax = x < 0 ? -x : x; if (ax > peak) peak = ax; }
+          st[c].px = px; st[c].py = py; sum += acc / (e - s);
+        }
+        if (e - s > blk * 0.5) powers.push(sum / nCh);
+        if (bi % 25 === 24) await new Promise(r => setTimeout(r, 0));   // keeps the page responsive on long files
+      }
+      const db = normRelGated(powers); if (db == null) return null;
+      return { db, peak };
+    }
+    function normStart(f) {
+      normTrack = f; normBlocks = []; normSaved = false; normMode = 'pending';
+      const cached = normCache[normKey(f)];
+      if (typeof cached === 'number') { normMode = 'cached'; normSetDb(cached); return; }
+      normSetDb(0);
+      normAnalyse(f).then(r => {
+        if (normTrack !== f || !normOn) return;
+        if (!r) { normMode = 'live'; return; }
+        let g = NORM_TARGET_DB - r.db;
+        if (g > 0 && r.peak > 0) g = Math.min(g, 2 - 20 * Math.log10(r.peak));   // never turn a peaky song up into hard clipping
+        g = normClamp(g);
+        normCache[normKey(f)] = Math.round(g * 10) / 10; normPersist(); normMode = 'done'; normSetDb(g);
+      }).catch(() => { if (normTrack === f) normMode = 'live'; });
+    }
+    // listening while it plays: used while the file is still being measured, and for files too big to decode
+    function normLiveSample() {
+      const el = currentMediaElement || audio; if (!el || el.paused || el.ended) return;
+      const v = el.volume; if (!(v > 0.02)) return;
+      normAn.getFloatTimeDomainData(normBuf);
+      let s = 0; for (let i = 0; i < normBuf.length; i++) s += normBuf[i] * normBuf[i];
+      normBlocks.push(s / normBuf.length / (v * v));               // divided by the Volume slider so it can't fight it
+      if (normBlocks.length > 600) normBlocks.shift();
+      if (normBlocks.length >= 10) {
+        const db = normRelGated(normBlocks);
+        if (db != null) {
+          normSetDb(NORM_TARGET_DB - db);
+          if (normMode === 'live' && !normSaved && normBlocks.length >= 100 && normTrack && normTrack.size) {
+            normSaved = true; normCache[normKey(normTrack)] = Math.round(normClamp(NORM_TARGET_DB - db) * 10) / 10; normPersist();
+          }
+        }
+      }
+    }
+    function normTick() {
+      if (!normOn) return;
+      const f = currentTrack; if (!f) return;
+      if (f !== normTrack) normStart(f);
+      if (normMode === 'pending' || normMode === 'live') normLiveSample();
+    }
+    function routeNorm(on) { try { analyserNode.disconnect(); } catch(e) {} analyserNode.connect(on ? normAn : audioContext.destination); }
+    function setNormalizer(on) {
+      normOn = !!on;
+      try { localStorage.setItem('impNormOn', normOn ? '1' : '0'); } catch(e) {}
+      if (normStatusEl) normStatusEl.textContent = normOn ? 'ON' : 'OFF';
+      try { normGain.gain.cancelScheduledValues(audioContext.currentTime); } catch(e) {}
+      normTrack = null; normMode = '';
+      if (normOn) { wantGraph(); routeNorm(true); if (!normTimer) normTimer = setInterval(normTick, 150); normTick(); }
+      else { routeNorm(false); clearInterval(normTimer); normTimer = null; normGain.gain.value = 1; }
+    }
+    function toggleNormalizer() { setNormalizer(!normOn); }
+    try { if (localStorage.getItem('impNormOn') === '1') setNormalizer(true); } catch(e) {}
 
     function onMediaPlay(){if(isAlarmActive||currentRandomPause)return;isPaused=false;if(currentTrack)nowPlaying.textContent=currentTrack.name;updatePlayPauseButton();}
     function onMediaPause(){
@@ -3454,11 +3679,22 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
     (function initLyrics() {
       // lyricsMap: stemLower → { text, rating }
       const lyricsMap = {};
-      let lyricsLines = [];     // [{text, timeMs}]
+      // lines: { text, timeMs (stamp you typed, -1 = none), anchor (that stamp is trusted),
+      //          w (share of time when spreading), startMs (final start time used for playback) }
+      let lyricsLines = [];
       let lyricsIdx   = -1;
       let lyricsTimer = null;
       let viewAllMode = false;
       let currentStemForWrong = null;  // track stem so "Mark Wrong" knows what to rename
+      let ignoredStamps = 0;           // out-of-order timestamps that were set aside
+      let schedDurMs = -1;             // song length the start times were last worked out for
+      let fullEls = [], fullActive = -1, userScrollUntil = 0;
+
+      // Lines without a timestamp are spread between the stamped lines around them.
+      // true  = a longer line gets a longer share of the time (closer to how it is really sung)
+      // false = every un-stamped line gets exactly the same share
+      const WEIGHT_BY_LENGTH = true;
+      const BASE_WEIGHT = 12;          // every line counts as at least this many characters
 
       // DOM
       const lyricsContext  = document.getElementById('lyricsContext');
@@ -3474,61 +3710,92 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
       const noTsEl     = document.getElementById('lyricsNoTs');
       const viewAllBtn = document.getElementById('lyricsViewAllBtn');
 
+      // ── View All: the same fixed-size box, scrollable, current line highlighted ──
+      function buildFullView() {
+        fullView.textContent = '';
+        fullActive = -1;
+        fullEls = lyricsLines.map(l => {
+          const d = document.createElement('div');
+          d.className = 'lyr-full-line';
+          d.textContent = l.text;
+          fullView.appendChild(d);
+          return d;
+        });
+        markFull(lyricsIdx, false);
+      }
+      function markFull(idx, smooth) {
+        if (fullActive >= 0 && fullEls[fullActive]) fullEls[fullActive].classList.remove('active');
+        const el = fullEls[idx];
+        if (!el) { fullActive = -1; return; }
+        el.classList.add('active');
+        fullActive = idx;
+        // don't fight you while you are scrolling around by hand - it follows again a few seconds later
+        if (Date.now() < userScrollUntil) return;
+        const top = el.offsetTop - (fullView.clientHeight - el.offsetHeight) / 2;
+        try { fullView.scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' }); }
+        catch (e) { fullView.scrollTop = Math.max(0, top); }
+      }
+      const holdFollow = () => { userScrollUntil = Date.now() + 4000; };
+      fullView.addEventListener('wheel', holdFollow, { passive: true });
+      fullView.addEventListener('touchmove', holdFollow, { passive: true });
+      fullView.addEventListener('pointerdown', holdFollow);   // grabbing the scrollbar
+
       // Toggle View All / Line-by-line
       viewAllBtn.addEventListener('click', () => {
         viewAllMode = !viewAllMode;
         viewAllBtn.textContent = viewAllMode ? 'Line View' : 'View All';
         lyricsContext.style.display = viewAllMode ? 'none' : 'flex';
         fullView.style.display = viewAllMode ? 'block' : 'none';
-        if (viewAllMode && lyricsLines.length) {
-          // Build full text, strip timestamps from display
-          fullView.textContent = lyricsLines.map(l => l.text).join('\n');
-          // Scroll to current line
-          if (lyricsIdx >= 0) {
-            const lineH = fullView.scrollHeight / lyricsLines.length;
-            fullView.scrollTop = Math.max(0, lyricsIdx * lineH - fullView.clientHeight / 2);
-          }
-        }
+        if (viewAllMode) { userScrollUntil = 0; buildFullView(); }
       });
 
-
-
-      // Parse lyrics text: keep timestamps for syncing, strip from display
-      // Supports: "m:ss text", "mm:ss text", "m:ss:xx text" (LRC converted),
-      // and YouTube's glued transcript-paste format, where the visible
-      // "1:04" timestamp is immediately followed (no space) by a duplicate
-      // hidden accessibility label - "4 seconds" or "1 minute, 4 seconds" -
-      // glued straight onto the caption: "1:041 minute, 4 secondsbreathless...".
-      // That's copy-paste from YouTube's transcript panel, not malformed data.
+      // ── Reading a lyrics file ──────────────────────────────────────────────
+      // Timestamps (kept for syncing, never shown) can look like any of these:
+      //   0:10 text   00:10 text   1:02:03 text (h:mm:ss)   0:10.5 text
+      //   [00:10.00] text   [0:10] text   (0:10) text   [00:10:50] text (mm:ss:xx)
+      //   [00:10.00][00:45.00] text   (same line at two times - repeated chorus)
+      //   0:10 - text   0:10: text   0:10 | text
+      //   a timestamp alone on its own line, with the words on the line below it
+      //   YouTube's glued transcript paste: "1:041 minute, 4 secondsbreathless..."
+      // A line with no timestamp is simply "un-stamped" and gets spread between its neighbours.
       const TS_GLUED_MIN_RE = /^(\d{1,3}):(\d{2})(\d+)\s*minutes?,\s*(\d+)\s*seconds?([\s\S]*)$/i;
       const TS_GLUED_SEC_RE = /^(\d{1,3}):(\d{2})(\d+)\s*seconds?([\s\S]*)$/i;
-      const TS_CLEAN_RE     = /^(\d{1,3}):(\d{2})(?::(\d{2}))?\s+([\s\S]+)/;
+      const TS_BRACKET_RE   = /^\s*[\[(<]\s*(\d{1,3}):(\d{2})(?::(\d{2}))?(?:[.,](\d{1,3}))?\s*[\])>]\s*/;
+      const TS_BARE_RE      = /^\s*(\d{1,3}):(\d{2})(?::(\d{2}))?(?:[.,](\d{1,3}))?(?!\d)(?:\s*[-–—:|>]+(?=\s|$))?\s*/;
 
-      function parseTimestampLine(ln) {
-        let m = TS_GLUED_MIN_RE.exec(ln);
-        if (m && m[3] === m[1] && parseInt(m[4],10) === parseInt(m[2],10)) {
-          return { timeMs: (parseInt(m[1],10)*60 + parseInt(m[2],10)) * 1000, text: m[5] };
-        }
-        m = TS_GLUED_SEC_RE.exec(ln);
-        if (m && parseInt(m[3],10) === parseInt(m[2],10)) {
-          return { timeMs: (parseInt(m[1],10)*60 + parseInt(m[2],10)) * 1000, text: m[4] };
-        }
-        m = TS_CLEAN_RE.exec(ln);
-        if (m) {
-          const hasH = m[3] !== undefined;
-          const h    = hasH ? parseInt(m[1],10) : 0;
-          const mins = hasH ? parseInt(m[2],10) : parseInt(m[1],10);
-          const secs = hasH ? parseInt(m[3],10) : parseInt(m[2],10);
-          return { timeMs: (h*3600 + mins*60 + secs) * 1000, text: m[4] };
-        }
-        return null;
+      function stampToMs(a, b, c, frac, bracketed) {
+        let h = 0, m, s, fr = 0;
+        if (c === undefined)  { m = +a; s = +b; }
+        else if (bracketed)   { m = +a; s = +b; fr = +c / Math.pow(10, c.length); }   // [mm:ss:xx]
+        else                  { h = +a; m = +b; s = +c; }                              // h:mm:ss
+        if (frac !== undefined) fr = +frac / Math.pow(10, frac.length);
+        return Math.round(((h * 3600 + m * 60 + s) + fr) * 1000);
       }
 
-      // Strip any timestamp-looking tokens, stray "N seconds"/"N minute(s), M
-      // seconds" labels, and bracket/paren content from a line of lyric text,
-      // no matter how it's glued together - so only actual words are ever
-      // left to display. This is a fallback safety net for anything
-      // parseTimestampLine() above didn't already fully unpack.
+      // → { stamps: [ms, ...], rest: "text after the stamp(s)" }
+      function readStamps(ln) {
+        let m = TS_GLUED_MIN_RE.exec(ln);
+        if (m && m[3] === m[1] && parseInt(m[4], 10) === parseInt(m[2], 10))
+          return { stamps: [stampToMs(m[1], m[2])], rest: m[5] };
+        m = TS_GLUED_SEC_RE.exec(ln);
+        if (m && parseInt(m[3], 10) === parseInt(m[2], 10))
+          return { stamps: [stampToMs(m[1], m[2])], rest: m[4] };
+
+        const stamps = [];
+        let rest = ln;
+        while ((m = TS_BRACKET_RE.exec(rest))) {
+          stamps.push(stampToMs(m[1], m[2], m[3], m[4], true));
+          rest = rest.slice(m[0].length);
+        }
+        if (!stamps.length && (m = TS_BARE_RE.exec(rest))) {
+          stamps.push(stampToMs(m[1], m[2], m[3], m[4], false));
+          rest = rest.slice(m[0].length);
+        }
+        return { stamps, rest };
+      }
+
+      // Strip any leftover timestamp-looking tokens, stray "N seconds" labels, music-note symbols,
+      // and bracket/paren content from a line of lyric text, so only real words are ever displayed.
       function sanitizeLyricText(text) {
         let t = text;
         let prev;
@@ -3539,25 +3806,90 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           t = t.replace(/^\s*\d+(?:\.\d+)?\s*seconds?\s*/i, '');
         } while (t !== prev);
         t = t.replace(/sync\s+to\s+video\s+time/ig, '');
+        t = t.replace(/<\s*\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?\s*>/g, '');   // word-by-word LRC tags
         t = t.replace(/\[[^\]]*\]/g, '');
         t = t.replace(/\([^)]*\)/g, '');
+        t = t.replace(/[♪♫♬♩]|🎵|🎶|🎼/g, ' ');                                  // note symbols are never shown
         t = t.replace(/\s+/g, ' ').trim();
         return t;
       }
 
       function parseLyrics(raw) {
-        const lines = [];
-        for (let ln of raw.split('\n')) {
+        let out = [];
+        let pending = null;       // a stamp that sat alone on its own line - belongs to the next line of words
+        let multi = false;
+        for (let ln of String(raw).replace(/^\uFEFF/, '').split(/\r\n|\n|\r/)) {
           ln = ln.trim();
           if (!ln) continue;
-          const parsed = parseTimestampLine(ln);
-          let text, timeMs;
-          if (parsed) { text = parsed.text; timeMs = parsed.timeMs; }
-          else        { text = ln;          timeMs = -1; }
-          text = sanitizeLyricText(text);
-          if (text) lines.push({ text, timeMs });
+          const { stamps, rest } = readStamps(ln);
+          const text = sanitizeLyricText(rest);
+          if (!text) { if (stamps.length) pending = stamps; continue; }
+          const use = stamps.length ? stamps : (pending || []);
+          pending = null;
+          if (!use.length) out.push({ text, timeMs: -1 });
+          else { if (use.length > 1) multi = true; use.forEach(ms => out.push({ text, timeMs: ms })); }
         }
-        return lines;
+
+        // a repeated-chorus line ([0:10][1:30] ...) shows up out of time order - put the pieces in order,
+        // each stamped line carrying along the un-stamped lines that follow it
+        if (multi) {
+          const groups = [];
+          out.forEach(l => { if (l.timeMs >= 0 || !groups.length) groups.push([l]); else groups[groups.length - 1].push(l); });
+          groups.forEach((g, i) => g._i = i);
+          groups.sort((a, b) => ((a[0].timeMs < 0 ? -1 : a[0].timeMs) - (b[0].timeMs < 0 ? -1 : b[0].timeMs)) || (a._i - b._i));
+          out = [].concat.apply([], groups);
+        }
+
+        // Keep the biggest set of timestamps that keep moving forward. A typo (a 20:00 where 2:00 was meant)
+        // or a stamp that's out of order is set aside - it never drags the lines after it off course.
+        const idx = [];
+        out.forEach((l, i) => { l.anchor = false; if (l.timeMs >= 0) idx.push(i); });
+        const m = idx.length, len = new Array(m).fill(1), prev = new Array(m).fill(-1);
+        let bestEnd = -1;
+        for (let i = 0; i < m; i++) {
+          for (let j = 0; j < i; j++) {
+            if (out[idx[j]].timeMs < out[idx[i]].timeMs && len[j] + 1 > len[i]) { len[i] = len[j] + 1; prev[i] = j; }
+          }
+          if (bestEnd < 0 || len[i] > len[bestEnd]) bestEnd = i;
+        }
+        for (let k = bestEnd; k >= 0; k = prev[k]) out[idx[k]].anchor = true;
+        ignoredStamps = m - (bestEnd >= 0 ? len[bestEnd] : 0);
+
+        out.forEach(l => { l.w = WEIGHT_BY_LENGTH ? BASE_WEIGHT + l.text.length : 1; l.startMs = 0; });
+        return out;
+      }
+
+      // ── Working out when every line starts ─────────────────────────────────
+      // Every stamped line starts exactly when you said. Each run of un-stamped lines is spread between
+      // the stamp before it and the stamp after it - the part before your first stamp runs from the start
+      // of the song, and the part after your last stamp runs to the end of the song.
+      function buildSchedule(durMs) {
+        const n = lyricsLines.length;
+        schedDurMs = durMs;
+        if (!n) return;
+        const anchors = [];
+        lyricsLines.forEach((l, i) => { if (l.anchor) anchors.push(i); });
+
+        const segs = [];   // { from, to (exclusive), t0, t1 (null = runs to the end of the song) }
+        if (!anchors.length) segs.push({ from: 0, to: n, t0: 0, t1: null });
+        else {
+          if (anchors[0] > 0) segs.push({ from: 0, to: anchors[0], t0: 0, t1: lyricsLines[anchors[0]].timeMs });
+          anchors.forEach((a, k) => {
+            const next = k + 1 < anchors.length ? anchors[k + 1] : n;
+            segs.push({ from: a, to: next, t0: lyricsLines[a].timeMs, t1: next < n ? lyricsLines[next].timeMs : null });
+          });
+        }
+        segs.forEach(s => {
+          const cnt = s.to - s.from;
+          const t1 = s.t1 !== null ? s.t1 : Math.max(durMs, s.t0 + cnt * 1500);   // never squash lines closer than 1.5s at the tail
+          let total = 0;
+          for (let i = s.from; i < s.to; i++) total += lyricsLines[i].w;
+          let acc = 0;
+          for (let i = s.from; i < s.to; i++) {
+            lyricsLines[i].startMs = s.t0 + (t1 - s.t0) * (acc / total);
+            acc += lyricsLines[i].w;
+          }
+        });
       }
 
       // Display 5 context lines: 2 before (dim), active (bright), 2 after (dim)
@@ -3580,15 +3912,11 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           }
         });
 
-        // Sync full view scroll if open
-        if (viewAllMode && lyricsLines.length) {
-          const lineH = fullView.scrollHeight / lyricsLines.length;
-          fullView.scrollTop = Math.max(0, idx * lineH - fullView.clientHeight / 2);
-        }
+        if (viewAllMode) markFull(idx, true);
       }
 
       function clearDisplay(msg) {
-        lyricsLines = []; lyricsIdx = -1;
+        lyricsLines = []; lyricsIdx = -1; fullEls = []; fullActive = -1;
         ctxEls.forEach((el, i) => {
           el.textContent = i === 2 ? (msg || '') : '';
           el.className = 'lyrics-ctx-line' + (i === 2 ? ' active lyrics-empty' : '');
@@ -3623,53 +3951,52 @@ html.theme-light input[type="time"]::-webkit-calendar-picker-indicator{filter:no
           return;
         }
 
-        const hasTimestamps = lyricsLines.some(l => l.timeMs >= 0);
+        const n = lyricsLines.length;
+        const stamped = lyricsLines.filter(l => l.anchor).length;
+        const needsDuration = !lyricsLines[n - 1].anchor;   // lines after your last stamp run to the end of the song
+        schedDurMs = -1;
+        {
+          const el0 = currentMediaElement || audio;
+          buildSchedule(el0 && isFinite(el0.duration) && el0.duration > 0 ? el0.duration * 1000 : 0);
+        }
+        lyricsIdx = -1;
         showLine(0);
-        statusEl.textContent = hasTimestamps
-          ? `${lyricsLines.length} lines · timestamp-synced`
-          : `${lyricsLines.length} lines · evenly distributed`;
-        noTsEl.style.display = hasTimestamps ? 'none' : 'block';
 
-        if (viewAllMode) {
-          fullView.textContent = lyricsLines.map(l => l.text).join('\n');
-        }
+        let note = stamped === 0 ? 'no timestamps · spread across the song'
+                 : stamped === n  ? 'timestamp-synced'
+                 : `${stamped} timestamped · the rest spread between them`;
+        if (ignoredStamps) note += ` · ${ignoredStamps} out-of-order timestamp${ignoredStamps > 1 ? 's' : ''} ignored`;
+        statusEl.textContent = `${n} lines · ${note}`;
+        noTsEl.style.display = stamped ? 'none' : 'block';
 
-        // Auto-scroll: timestamp mode (poll 200ms) or even-distribution (poll 400ms)
-        if (hasTimestamps) {
-          lyricsTimer = setInterval(() => {
-            const elem = currentMediaElement || audio;
-            if (!elem || isNaN(elem.duration)) return;
-            const posMs = elem.currentTime * 1000;
-            // Binary-search for last timestamp <= posMs
-            let lo = 0, hi = lyricsLines.length - 1, best = 0;
-            while (lo <= hi) {
-              const mid = (lo + hi) >> 1;
-              if (lyricsLines[mid].timeMs >= 0 && lyricsLines[mid].timeMs <= posMs) {
-                best = mid; lo = mid + 1;
-              } else { hi = mid - 1; }
-            }
-            if (best !== lyricsIdx) showLine(best);
-          }, 200);
-        } else {
-          lyricsTimer = setInterval(() => {
-            const elem = currentMediaElement || audio;
-            if (!elem || isNaN(elem.duration) || !elem.duration) return;
-            const pct = elem.currentTime / elem.duration;
-            const clamped = Math.min(lyricsLines.length - 1, Math.floor(pct * lyricsLines.length));
-            if (clamped !== lyricsIdx) showLine(clamped);
-          }, 400);
-        }
+        if (viewAllMode) buildFullView();
+
+        // follow the song (works the same for fully stamped, partly stamped and un-stamped lyrics)
+        lyricsTimer = setInterval(() => {
+          const elem = currentMediaElement || audio;
+          if (!elem) return;
+          const durMs = (isFinite(elem.duration) && elem.duration > 0) ? elem.duration * 1000 : 0;
+          if (!durMs && needsDuration) return;                          // length not known yet
+          if (Math.abs(durMs - schedDurMs) > 400) buildSchedule(durMs);  // length just became known / changed
+          const posMs = elem.currentTime * 1000;
+          // binary-search for the last line that has started
+          let lo = 0, hi = n - 1, best = 0;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            if (lyricsLines[mid].startMs <= posMs) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+          }
+          if (best !== lyricsIdx) showLine(best);
+        }, 200);
       }
 
       // Public API
       window._lyricsOnTrackStart = function(filename) { loadLyricsFor(filename); };
       window._lyricsRegisterFile = function(stem, text, rating) {
         const key = stem.toLowerCase().trim();
-        // Prefer timestamped version if we already have a plain one
+        // Prefer a timestamped version if we already have a plain one
+        const looksStamped = t => /^\s*[\[(<]?\s*\d{1,3}:\d{2}(?!\d)/m.test(t || '');
         const existing = lyricsMap[key];
-        const newHasTs = /^\d{1,2}:\d{2}/.test(text.split('\n').find(l=>l.trim())||'');
-        const oldHasTs = existing && /^\d{1,2}:\d{2}/.test((existing.text||'').split('\n').find(l=>l.trim())||'');
-        if (!existing || (newHasTs && !oldHasTs)) {
+        if (!existing || (looksStamped(text) && !looksStamped(existing.text))) {
           lyricsMap[key] = { text, rating: rating || 'any' };
         }
       };
